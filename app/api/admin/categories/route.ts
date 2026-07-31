@@ -7,10 +7,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const token = request.cookies.get("ADMIN_ACCESS_TOKEN")!.value;
   const body = await request.text();
   const res = await fetch(`${PRODUCT_API_URL}/api/categories`, {
     method: "POST",
-    headers: adminHeaders(),
+    headers: adminHeaders(token),
     body,
   });
   const text = await res.text();
