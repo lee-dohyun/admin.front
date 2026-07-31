@@ -47,10 +47,10 @@ jobs:
     steps:
       - name: Deploy new image to K3s
         run: |
-          /usr/local/bin/kubectl --kubeconfig=/home/leedohyun/.kube-ci/product-front-deployer.kubeconfig \
-            set image deployment/product-front product-front=leedohyun1985/product.front:${{ github.sha }} -n customer
+          /usr/local/bin/kubectl --kubeconfig=/home/leedohyun/.kube-ci/admin-front-deployer.kubeconfig \
+            set image deployment/admin-front admin-front=leedohyun1985/admin.front:${{ github.sha }} -n customer
 
       - name: Wait for rollout
         run: |
-          /usr/local/bin/kubectl --kubeconfig=/home/leedohyun/.kube-ci/product-front-deployer.kubeconfig \
-            rollout status deployment/product-front -n customer --timeout=120s
+          /usr/local/bin/kubectl --kubeconfig=/home/leedohyun/.kube-ci/admin-front-deployer.kubeconfig \
+            rollout status deployment/admin-front -n customer --timeout=120s
