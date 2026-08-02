@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "관리자",
-  description: "leedohyun.com 쇼핑몰 관리자",
+  description: "posselect.com 쇼핑몰 관리자",
 };
 
 export default function RootLayout({

@@ -5,7 +5,8 @@ import { jwtVerify, createRemoteJWKSet } from "jose";
 const KEYCLOAK_INTERNAL_URL =
   process.env.KEYCLOAK_REALM_URL ??
   "http://keycloak-service.keycloak.svc.cluster.local/realms/staff";
-const EXPECTED_ISSUER = "https://keycloak.leedohyun.com/realms/staff";
+const EXPECTED_ISSUER =
+  process.env.KEYCLOAK_EXPECTED_ISSUER ?? "https://keycloak.posselect.com/realms/staff";
 
 const JWKS = createRemoteJWKSet(new URL(`${KEYCLOAK_INTERNAL_URL}/protocol/openid-connect/certs`));
 
