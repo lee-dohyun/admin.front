@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BlueprintCorners, Table } from "@posselect/ui";
 
 type ProductSummary = {
   id: number;
@@ -33,37 +34,42 @@ export default function AdminProductsPage() {
     <main className="max-w-4xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">상품 관리</h1>
-        <Link href="/admin/products/new" className="px-4 py-2 bg-black text-white rounded">
+        <Link href="/admin/products/new" className="btn btn-primary blueprint">
+          <BlueprintCorners />
           상품 추가
         </Link>
       </div>
-      <table className="w-full text-sm">
+      <Table>
         <thead>
-          <tr className="text-left border-b">
-            <th className="py-2">이름</th>
-            <th className="py-2">가격</th>
-            <th className="py-2">재고</th>
-            <th className="py-2"></th>
+          <tr>
+            <th>이름</th>
+            <th>가격</th>
+            <th>재고</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {products.map((p) => (
-            <tr key={p.id} className="border-b">
-              <td className="py-2">{p.name}</td>
-              <td className="py-2">{p.price.toLocaleString()}원</td>
-              <td className="py-2">{p.stockQuantity}</td>
-              <td className="py-2 text-right">
-                <Link href={`/admin/products/${p.id}/edit`} className="underline mr-3">
+            <tr key={p.id}>
+              <td>{p.name}</td>
+              <td>{p.price.toLocaleString()}원</td>
+              <td>{p.stockQuantity}</td>
+              <td className="text-right">
+                <Link href={`/admin/products/${p.id}/edit`} className="btn btn-ghost">
                   수정
                 </Link>
-                <button onClick={() => handleDelete(p.id)} className="text-red-600 underline">
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="btn btn-ghost"
+                  style={{ color: "var(--color-danger)" }}
+                >
                   삭제
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </main>
   );
 }

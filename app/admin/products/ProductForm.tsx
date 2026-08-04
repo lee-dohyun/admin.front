@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Field, Input, Textarea } from "@posselect/ui";
 
 type Category = { id: number; name: string };
 
@@ -87,12 +88,11 @@ export default function ProductForm({ productId }: { productId?: number }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-lg">
-      <label className="flex flex-col gap-1">
-        카테고리
+      <Field label="카테고리">
         <select
           value={values.categoryId}
           onChange={(e) => setValues({ ...values, categoryId: Number(e.target.value) })}
-          className="border rounded px-3 py-2"
+          className="input"
           required
         >
           <option value="" disabled>
@@ -104,64 +104,54 @@ export default function ProductForm({ productId }: { productId?: number }) {
             </option>
           ))}
         </select>
-      </label>
-      <label className="flex flex-col gap-1">
-        이름
-        <input
+      </Field>
+      <Field label="이름">
+        <Input
           value={values.name}
           onChange={(e) => setValues({ ...values, name: e.target.value })}
-          className="border rounded px-3 py-2"
           required
         />
-      </label>
-      <label className="flex flex-col gap-1">
-        설명
-        <textarea
+      </Field>
+      <Field label="설명">
+        <Textarea
           value={values.description}
           onChange={(e) => setValues({ ...values, description: e.target.value })}
-          className="border rounded px-3 py-2"
           rows={4}
         />
-      </label>
-      <label className="flex flex-col gap-1">
-        가격
-        <input
+      </Field>
+      <Field label="가격">
+        <Input
           type="number"
           min={0}
           value={values.price}
           onChange={(e) => setValues({ ...values, price: e.target.value })}
-          className="border rounded px-3 py-2"
           required
         />
-      </label>
-      <label className="flex flex-col gap-1">
-        재고
-        <input
+      </Field>
+      <Field label="재고">
+        <Input
           type="number"
           min={0}
           value={values.stockQuantity}
           onChange={(e) => setValues({ ...values, stockQuantity: e.target.value })}
-          className="border rounded px-3 py-2"
           required
         />
-      </label>
-      <label className="flex flex-col gap-1">
-        이미지 URL (한 줄에 하나씩)
-        <textarea
+      </Field>
+      <Field label="이미지 URL (한 줄에 하나씩)">
+        <Textarea
           value={values.imageUrls}
           onChange={(e) => setValues({ ...values, imageUrls: e.target.value })}
-          className="border rounded px-3 py-2"
           rows={3}
         />
-      </label>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button
-        type="submit"
-        disabled={saving}
-        className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-      >
+      </Field>
+      {error && (
+        <p className="text-sm" style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
+      )}
+      <Button type="submit" variant="primary" block disabled={saving}>
         {saving ? "저장 중..." : "저장"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Table, Tag } from "@posselect/ui";
 
 type AdminOrder = {
   id: number;
@@ -18,6 +19,11 @@ const statusLabel: Record<string, string> = {
   PAID: "결제 완료",
 };
 
+const statusVariant: Record<string, "warning" | "success"> = {
+  CREATED: "warning",
+  PAID: "success",
+};
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
 
@@ -31,34 +37,38 @@ export default function AdminOrdersPage() {
   return (
     <main className="max-w-5xl mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">주문 관리</h1>
-      <table className="w-full text-sm">
+      <Table>
         <thead>
-          <tr className="text-left border-b">
-            <th className="py-2">주문번호</th>
-            <th className="py-2">주문자</th>
-            <th className="py-2">계정</th>
-            <th className="py-2">상품수</th>
-            <th className="py-2">금액</th>
-            <th className="py-2">상태</th>
-            <th className="py-2">주문일시</th>
+          <tr>
+            <th>주문번호</th>
+            <th>주문자</th>
+            <th>계정</th>
+            <th>상품수</th>
+            <th>금액</th>
+            <th>상태</th>
+            <th>주문일시</th>
           </tr>
         </thead>
         <tbody>
           {orders.map((o) => (
-            <tr key={o.id} className="border-b">
-              <td className="py-2">#{o.id}</td>
-              <td className="py-2">
+            <tr key={o.id}>
+              <td>#{o.id}</td>
+              <td>
                 {o.ordererName} ({o.ordererPhone})
               </td>
-              <td className="py-2">{o.customerEmail ?? "게스트"}</td>
-              <td className="py-2">{o.itemCount}</td>
-              <td className="py-2">{o.totalPrice.toLocaleString()}원</td>
-              <td className="py-2">{statusLabel[o.status] ?? o.status}</td>
-              <td className="py-2">{new Date(o.createdAt).toLocaleString()}</td>
+              <td>{o.customerEmail ?? "게스트"}</td>
+              <td>{o.itemCount}</td>
+              <td>{o.totalPrice.toLocaleString()}원</td>
+              <td>
+                <Tag variant={statusVariant[o.status] ?? "neutral"}>
+                  {statusLabel[o.status] ?? o.status}
+                </Tag>
+              </td>
+              <td>{new Date(o.createdAt).toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </main>
   );
 }

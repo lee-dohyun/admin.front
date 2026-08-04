@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Field, Input } from "@posselect/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,27 +36,29 @@ export default function LoginPage() {
     <main className="max-w-sm mx-auto p-8 mt-20">
       <h1 className="text-2xl font-bold mb-6 text-center">관리자 로그인</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          placeholder="아이디"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border rounded px-3 py-2"
-        />
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-        >
+        <Field label="아이디">
+          <Input
+            placeholder="아이디"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </Field>
+        <Field label="비밀번호">
+          <Input
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
+        {error && (
+          <p className="text-sm" style={{ color: "var(--color-danger)" }}>
+            {error}
+          </p>
+        )}
+        <Button type="submit" variant="primary" block disabled={loading}>
           {loading ? "로그인 중..." : "로그인"}
-        </button>
+        </Button>
       </form>
     </main>
   );
