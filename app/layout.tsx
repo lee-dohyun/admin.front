@@ -6,6 +6,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "관리자",
   description: "posselect.com 쇼핑몰 관리자",
+  icons: {
+    icon: "https://image.posselect.com/cdn/favicons/favicon-transparent-red-256.png",
+  },
 };
 
 export default function RootLayout({
