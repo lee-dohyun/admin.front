@@ -25,6 +25,7 @@ export default function RootLayout({
         >
           <Nav brand="관리자">
             <Link href="/admin/products">상품 관리</Link>
+            <Link href="/admin/categories">카테고리 관리</Link>
             <Link href="/admin/orders">주문 관리</Link>
             <a href="/api/logout">로그아웃</a>
           </Nav>
