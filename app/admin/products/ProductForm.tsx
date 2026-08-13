@@ -4,7 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Textarea } from "@posselect/ui";
 
-type Category = { id: number; name: string };
+type Category = { id: number; name: string; parentId: number | null };
+
+// 부모 카테고리 다음에 그 자식들이 바로 오도록 정렬 - 셀렉트 박스에서 들여쓰기로 계층을 표현하기 위함
+function orderByHierarchy(categories: Category[]): Category[] {
+  const topLevel = categories.filter((c) => c.parentId == null);
+  return topLevel.flatMap((top) => [
+    top,
+    ...categories.filter((c) => c.parentId === top.id),
+  ]);
+}
 
 type ProductFormValues = {
   categoryId: number | "";
@@ -98,9 +107,9 @@ export default function ProductForm({ productId }: { productId?: number }) {
           <option value="" disabled>
             선택하세요
           </option>
-          {categories.map((c) => (
+          {orderByHierarchy(categories).map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name}
+              {c.parentId ? `　└ ${c.name}` : c.name}
             </option>
           ))}
         </select>
