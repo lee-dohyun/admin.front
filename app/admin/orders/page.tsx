@@ -50,10 +50,10 @@ export default function AdminOrdersPage() {
   useEffect(load, []);
 
   const updateForm = (orderId: number, field: "carrier" | "trackingNumber", value: string) => {
-    setShipmentForm((prev) => ({
-      ...prev,
-      [orderId]: { carrier: "", trackingNumber: "", ...prev[orderId], [field]: value },
-    }));
+    setShipmentForm((prev) => {
+      const current = prev[orderId] ?? { carrier: "", trackingNumber: "" };
+      return { ...prev, [orderId]: { ...current, [field]: value } };
+    });
   };
 
   const registerShipment = async (orderId: number) => {
