@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Nav } from "@posselect/ui";
+import { verifyAdminToken } from "@/lib/auth";
+import { adminMenus, filterMenus } from "@/lib/menu";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,11 +14,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("ADMIN_ACCESS_TOKEN")?.value;
+  const claims = token ? await verifyAdminToken(token) : null;
+  const permittedMenus = filterMenus(adminMenus, claims?.roles || []);
+
   return (
     <html lang="ko">
       <body>
@@ -24,9 +32,11 @@ export default function RootLayout({
           style={{ borderBottom: "1px solid var(--color-divider)" }}
         >
           <Nav brand="관리자">
-            <Link href="/admin/products">상품 관리</Link>
-            <Link href="/admin/categories">카테고리 관리</Link>
-            <Link href="/admin/orders">주문 관리</Link>
+            {permittedMenus.map((menu) => (
+              <Link key={menu.href} href={menu.href}>
+                {menu.title}
+              </Link>
+            ))}
             <a href="/api/logout">로그아웃</a>
           </Nav>
         </div>

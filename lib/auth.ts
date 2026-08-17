@@ -10,13 +10,15 @@ const EXPECTED_ISSUER =
 
 const JWKS = createRemoteJWKSet(new URL(`${KEYCLOAK_INTERNAL_URL}/protocol/openid-connect/certs`));
 
-export type AdminClaims = { email: string; name?: string };
+export type AdminClaims = { email: string; name?: string; roles: string[] };
 
 export async function verifyAdminToken(token: string): Promise<AdminClaims | null> {
   try {
     const { payload } = await jwtVerify(token, JWKS, { issuer: EXPECTED_ISSUER });
     if (!payload.email) return null;
-    return { email: String(payload.email), name: payload.name ? String(payload.name) : undefined };
+    const realmAccess = payload.realm_access as { roles?: string[] } | undefined;
+    const roles = realmAccess?.roles || [];
+    return { email: String(payload.email), name: payload.name ? String(payload.name) : undefined, roles };
   } catch {
     return null;
   }
