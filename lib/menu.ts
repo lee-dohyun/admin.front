@@ -4,6 +4,7 @@ export interface MenuItem {
   title: string;
   href: string;
   requiredRoles?: Role[];
+  requiredAttributes?: Record<string, string | string[]>;
   children?: MenuItem[];
 }
 
@@ -33,15 +34,39 @@ export const adminMenus: MenuItem[] = [
  * 
  * @param requiredRoles 메뉴에 필요한 역할 목록
  * @param userRoles 사용자가 보유한 역할 목록
+ * @param requiredAttributes 메뉴에 필요한 속성 조건 (ABAC)
+ * @param userAttributes 사용자가 보유한 속성 목록 (ABAC)
  */
-export function hasPermission(requiredRoles?: Role[], userRoles?: Role[]): boolean {
-  if (!requiredRoles || requiredRoles.length === 0) {
-    return true; // 요구 권한이 없으면 통과
+export function hasPermission(
+  requiredRoles?: Role[], 
+  userRoles?: Role[],
+  requiredAttributes?: Record<string, string | string[]>,
+  userAttributes?: Record<string, string | string[]>
+): boolean {
+  // 1. RBAC 검사
+  if (requiredRoles && requiredRoles.length > 0) {
+    if (!userRoles || userRoles.length === 0) return false;
+    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
+    if (!hasRole) return false;
   }
-  if (!userRoles || userRoles.length === 0) {
-    return false;
+
+  // 2. ABAC 검사
+  if (requiredAttributes && Object.keys(requiredAttributes).length > 0) {
+    if (!userAttributes) return false;
+
+    for (const [key, expectedValue] of Object.entries(requiredAttributes)) {
+      const userValue = userAttributes[key];
+      if (userValue === undefined) return false;
+
+      const expectedArr = Array.isArray(expectedValue) ? expectedValue : [expectedValue];
+      const userArr = Array.isArray(userValue) ? userValue : [userValue];
+
+      const hasMatch = expectedArr.some(val => userArr.includes(val));
+      if (!hasMatch) return false;
+    }
   }
-  return requiredRoles.some((role) => userRoles.includes(role));
+
+  return true;
 }
 
 /**
@@ -51,15 +76,20 @@ export function hasPermission(requiredRoles?: Role[], userRoles?: Role[]): boole
  * 
  * @param menus 전체 메뉴 트리
  * @param userRoles 사용자 보유 역할 목록
+ * @param userAttributes 사용자 보유 속성 목록 (ABAC)
  */
-export function filterMenus(menus: MenuItem[], userRoles?: Role[]): MenuItem[] {
+export function filterMenus(
+  menus: MenuItem[], 
+  userRoles?: Role[],
+  userAttributes?: Record<string, string | string[]>
+): MenuItem[] {
   return menus
-    .filter((menu) => hasPermission(menu.requiredRoles, userRoles))
+    .filter((menu) => hasPermission(menu.requiredRoles, userRoles, menu.requiredAttributes, userAttributes))
     .map((menu) => {
       if (menu.children && menu.children.length > 0) {
         return {
           ...menu,
-          children: filterMenus(menu.children, userRoles),
+          children: filterMenus(menu.children, userRoles, userAttributes),
         };
       }
       return menu;

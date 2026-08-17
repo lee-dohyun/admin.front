@@ -12,6 +12,28 @@ export const metadata: Metadata = {
   icons: {
     icon: "https://image.posselect.com/cdn/favicons/favicon-transparent-red-256.png",
   },
+  openGraph: {
+    title: "관리자 | PosSelect",
+    description: "posselect.com 쇼핑몰 관리자",
+    url: "https://admin.posselect.com",
+    siteName: "PosSelect",
+    images: [
+      {
+        url: "https://image.posselect.com/cdn/logos/posselect-logo-hires-no-r.webp",
+        width: 1200,
+        height: 630,
+        alt: "PosSelect 대표 이미지",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "관리자 | PosSelect",
+    description: "posselect.com 쇼핑몰 관리자",
+    images: ["https://image.posselect.com/cdn/logos/posselect-logo-hires-no-r.webp"],
+  },
 };
 
 export default async function RootLayout({
@@ -22,7 +44,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const token = cookieStore.get("ADMIN_ACCESS_TOKEN")?.value;
   const claims = token ? await verifyAdminToken(token) : null;
-  const permittedMenus = filterMenus(adminMenus, claims?.roles || []);
+  const permittedMenus = filterMenus(adminMenus, claims?.roles || [], claims?.attributes);
 
   return (
     <html lang="ko">

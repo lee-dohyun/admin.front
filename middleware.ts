@@ -31,8 +31,8 @@ export async function middleware(request: NextRequest) {
   if (claims) {
     const pathname = request.nextUrl.pathname;
     const menu = findMenu(adminMenus, pathname);
-    if (menu && !hasPermission(menu.requiredRoles, claims.roles)) {
-      console.warn(`[RBAC/middleware] 권한 거부 - 속성: { path: "${pathname}", userEmail: "${claims.email}", roles: [${claims.roles.join(',')}] }`);
+    if (menu && !hasPermission(menu.requiredRoles, claims.roles, menu.requiredAttributes, claims.attributes)) {
+      console.warn(`[RBAC/middleware] 권한 거부 - 속성: { path: "${pathname}", userEmail: "${claims.email}", roles: [${claims.roles.join(',')}], attributes: ${JSON.stringify(claims.attributes || {})} }`);
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "forbidden" }, { status: 403 });
       }
