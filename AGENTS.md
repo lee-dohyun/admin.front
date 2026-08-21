@@ -77,8 +77,13 @@ export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
 있었던 것으로 보아 검사 대상으로 의도는 되어 있었으나 도달할 수 없는 코드였다.
 
 `hasPermission`은 `requiredRoles`가 비어 있으면 `true`를 반환한다 — "역할 미지정 = 전원 허용"이다.
-따라서 메뉴 항목을 추가하면서 `requiredRoles`를 빠뜨리면 인증된 staff 전원에게 열린다.
-규칙 자체를 등록하지 않는 것과는 다른 결과이니 주의할 것.
+규칙 자체를 등록하지 않으면 거부되는 것과 **정반대 결과**라, 역할을 빠뜨리면 인증된 staff 전원에게
+조용히 열린다. 그래서 `MenuItem.requiredRoles`는 **필수 필드**다(선택 아님) — 빠뜨리면
+`npm run typecheck`가 깨진다. 전원 공개가 실제 의도라면 `[]`를 명시적으로 적을 것.
+
+`requiredRoles`가 타입상 필수인 것과 별개로, `hasPermission` **함수**의 파라미터는 여전히 선택이다
+(`RequirePermission`이 역할 없이 속성만으로 검사할 수 있어야 하기 때문). 이 컴포넌트에 역할도 속성도
+넘기지 않으면 인증만으로 통과하니, 게이트로 쓸 때는 조건을 반드시 명시할 것.
 
 ### 3. 게이트웨이가 페이지 경로의 쓰기 요청만 막는다 → Server Action 금지
 

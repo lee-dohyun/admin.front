@@ -12,7 +12,15 @@ export interface MenuItem {
    * `resolveAccess`가 매칭하지 못하고, 미들웨어는 그런 경로를 **거부**한다.
    */
   apiPrefixes?: string[];
-  requiredRoles?: Role[];
+  /**
+   * 이 메뉴와 `apiPrefixes`에 접근할 수 있는 역할. **선택 항목이 아니다.**
+   *
+   * `hasPermission`은 목록이 비어 있으면 `true`를 반환한다 — 즉 역할을 적지 않은 항목은
+   * 인증된 staff 전원에게 열린다. 규칙을 아예 등록하지 않으면 거부되는 것과 정반대 결과라
+   * 리뷰에서 눈치채기 어렵다. 그래서 타입 단계에서 누락을 막는다.
+   * 전원 공개가 실제 의도라면 `[]`를 명시적으로 적어 의도를 드러낼 것.
+   */
+  requiredRoles: Role[];
   requiredAttributes?: Record<string, string | string[]>;
   children?: MenuItem[];
 }
