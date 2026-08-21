@@ -56,19 +56,29 @@ export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
 근거가 미들웨어의 사전 검사다. 라우트를 `/api/admin/**` 밖으로 옮기거나 이름을 바꾸면 RBAC과 이
 전제가 동시에 사라진다.
 
-### 2. `adminMenus`에 없는 경로는 RBAC가 적용되지 않는다 (현재 알려진 격차)
+### 2. 인가는 deny-by-default다 — 규칙 없는 경로는 거부된다
 
-`middleware.ts`의 흐름은 `findMenu(adminMenus, pathname)` → 찾은 메뉴가 있을 때만 `hasPermission`
-검사다. 그리고 `findMenu`는 `pathname.startsWith(menu.href)`로 매칭한다.
+`middleware.ts`는 인증 후 `resolveAccess(adminMenus, pathname)`로 적용할 규칙을 찾고,
+**규칙을 못 찾으면 통과가 아니라 거부한다.** 새 화면이나 새 API를 추가하면 `lib/menu.ts`에
+등록하기 전까지 403이 난다. 이는 버그가 아니라 의도된 동작이다 — 등록을 잊었을 때
+"조용히 무방비"가 아니라 "눈에 띄게 막힘"이 되도록 뒤집어 놓은 것이다.
 
-- `lib/menu.ts`에 항목을 추가하지 않은 새 관리자 페이지는 `findMenu`가 `undefined`를 반환 →
-  **staff realm 계정이면 역할과 무관하게 통과**한다. 새 화면을 만들면 `adminMenus`에 등록하고
-  `requiredRoles`를 지정하는 것이 곧 권한 설정이다.
-- 같은 이유로 **`/api/admin/**` 라우트에는 역할 검사가 걸리지 않는다** — `"/api/admin/products"`는
-  `"/admin/products"`로 시작하지 않으므로 `findMenu`가 못 찾는다. 즉 지금은 어떤 staff 역할이든
-  관리 API를 직접 호출할 수 있다(인증은 되지만 인가는 안 됨). 관리 API 권한이 필요한 작업을 할 때
-  이 격차를 전제로 설계하고, 고치려면 별도 이슈로 다룰 것.
-- `hasPermission`은 `requiredRoles`가 비어 있으면 `true`를 반환한다 — "역할 미지정 = 전원 허용"이다.
+**등록 방법** (`lib/menu.ts`의 `adminMenus`):
+
+- 화면 경로는 `href`에, **그 화면이 호출하는 API 경로는 `apiPrefixes`에** 넣는다. 둘 다 필요하다.
+  화면에만 역할을 걸고 API를 비워 두면 API를 직접 호출해 우회할 수 있다.
+- 매칭은 세그먼트 경계까지 본다(`resolveAccess` → `matchesPrefix`). `/admin/products-secret`은
+  `/admin/products` 규칙을 물려받지 않는다.
+
+**왜 이렇게 되어 있는가 (admin.front#12, 2026-08-21 수정).** 이전 구현은 규칙을 못 찾으면
+`NextResponse.next()`로 통과시켰고, 규칙 탐색이 화면 경로만 봤다. `"/api/admin/products"`는
+`"/admin/products"`로 시작하지 않으므로 어떤 규칙에도 매칭되지 않았고, 결과적으로 **관리 API
+전체가 인증만 되면 역할과 무관하게 호출 가능**했다. deny 분기 안에 API 전용 403 응답 코드가
+있었던 것으로 보아 검사 대상으로 의도는 되어 있었으나 도달할 수 없는 코드였다.
+
+`hasPermission`은 `requiredRoles`가 비어 있으면 `true`를 반환한다 — "역할 미지정 = 전원 허용"이다.
+따라서 메뉴 항목을 추가하면서 `requiredRoles`를 빠뜨리면 인증된 staff 전원에게 열린다.
+규칙 자체를 등록하지 않는 것과는 다른 결과이니 주의할 것.
 
 ### 3. 게이트웨이가 페이지 경로의 쓰기 요청만 막는다 → Server Action 금지
 
