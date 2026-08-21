@@ -39,7 +39,7 @@ jobs:
       # 그대로 두면 태그가 "/<name>:latest" 가 되어 buildx 가 invalid reference 로 죽는다.
       # push 하지 않는 PR 빌드에서는 태그 이름 자체가 의미 없으므로 폴백을 쓴다.
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
