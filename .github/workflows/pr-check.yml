@@ -35,6 +35,7 @@ jobs:
           for s in typecheck lint test; do
             if has "$s"; then echo "$s=true" >> "$GITHUB_OUTPUT"; else echo "$s=false" >> "$GITHUB_OUTPUT"; fi
           done
+          if has "test:coverage"; then echo "coverage=true" >> "$GITHUB_OUTPUT"; else echo "coverage=false" >> "$GITHUB_OUTPUT"; fi
       - name: Typecheck
         if: steps.scripts.outputs.typecheck == 'true'
         run: npm run typecheck
@@ -44,6 +45,19 @@ jobs:
       - name: Test
         if: steps.scripts.outputs.test == 'true'
         run: npm test
+      # 리포트 전용 — 커버리지 임계값으로 PR을 막지 않는다. 실패해도 다음 스텝은 계속 진행한다.
+      - name: Coverage (report-only)
+        if: steps.scripts.outputs.coverage == 'true'
+        continue-on-error: true
+        run: npm run test:coverage
+      - name: Upload coverage artifact
+        if: steps.scripts.outputs.coverage == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
       - name: Report missing gates
         run: |
           [ "${{ steps.scripts.outputs.typecheck }}" = "true" ] || echo "::warning::typecheck 스크립트가 없어 타입 검사를 건너뛰었습니다."
