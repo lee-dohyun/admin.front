@@ -25,9 +25,14 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      # @posselect/ui 는 git 의존성이라 lockfile 이 없거나 어긋나면 npm ci 가 실패한다 — 둘 다 대응.
+      # 폴백(`|| npm install`) 없이 npm ci 만 쓴다 — lockfile 드리프트를 CI 에서 실패로 잡기 위해서다.
+      # 원래 폴백은 "@posselect/ui 가 git 의존성이라 npm ci 가 실패한다"는 이유로 들어갔으나,
+      # 2026-08-22 실측 결과 그 전제는 성립하지 않았다: posselect-ui 는 public 이고,
+      # lock 의 resolved 가 git+ssh 여도 npm 이 https 로 폴백해 받아온다
+      # (콜드 캐시 + ssh 키 없음 + git config 없음, node 22/npm 10 에서 npm ci 성공 확인).
+      # 폴백은 lock 미동기화를 조용히 덮어 재현성만 잃게 하고 있었다(#30).
       - name: Install
-        run: npm ci || npm install
+        run: npm ci
       - name: Detect available scripts
         id: scripts
         run: |
