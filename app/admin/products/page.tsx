@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BlueprintCorners, Table } from "@posselect/ui";
+import CsvImportModal from "./CsvImportModal";
 
 type ProductSummary = {
   id: number;
@@ -14,6 +15,7 @@ type ProductSummary = {
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
 
   const load = () => {
     fetch("/api/admin/products")
@@ -34,10 +36,18 @@ export default function AdminProductsPage() {
     <main className="max-w-4xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">상품 관리</h1>
-        <Link href="/admin/products/new" className="btn btn-primary blueprint">
-          <BlueprintCorners />
-          상품 추가
-        </Link>
+        <div className="flex gap-2">
+          <button 
+            className="btn btn-ghost border border-[var(--color-border)]"
+            onClick={() => setIsCsvModalOpen(true)}
+          >
+            CSV 대량 등록
+          </button>
+          <Link href="/admin/products/new" className="btn btn-primary blueprint">
+            <BlueprintCorners />
+            상품 추가
+          </Link>
+        </div>
       </div>
       <Table>
         <thead>
@@ -70,6 +80,12 @@ export default function AdminProductsPage() {
           ))}
         </tbody>
       </Table>
+
+      <CsvImportModal 
+        isOpen={isCsvModalOpen} 
+        onClose={() => setIsCsvModalOpen(false)} 
+        onSuccess={() => load()} 
+      />
     </main>
   );
 }

@@ -25,7 +25,7 @@ export const adminMenus: MenuItem[] = [
   {
     title: "상품 관리",
     href: "/admin/products",
-    apiPrefixes: ["/api/admin/products"],
+    apiPrefixes: ["/api/admin/products", "/api/admin/upload"],
     requiredRoles: ["PRODUCT_MANAGER", "SYSTEM_ADMIN"],
   },
   {

@@ -39,6 +39,7 @@ export default function ProductForm({ productId }: { productId?: number }) {
   const [values, setValues] = useState<ProductFormValues>(emptyValues);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/categories")
@@ -62,6 +63,45 @@ export default function ProductForm({ productId }: { productId?: number }) {
         });
       });
   }, [productId]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("file", files[i]);
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          newUrls.push(data.imageUrl);
+        } else {
+          console.error("Upload failed for file", files[i].name);
+        }
+      }
+      if (newUrls.length > 0) {
+        setValues((prev) => ({
+          ...prev,
+          imageUrls: prev.imageUrls ? `${prev.imageUrls}\n${newUrls.join("\n")}` : newUrls.join("\n"),
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+      // Reset input
+      e.target.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,11 +187,22 @@ export default function ProductForm({ productId }: { productId?: number }) {
         />
       </Field>
       <Field label="이미지 URL (한 줄에 하나씩)">
-        <Textarea
-          value={values.imageUrls}
-          onChange={(e) => setValues({ ...values, imageUrls: e.target.value })}
-          rows={3}
-        />
+        <div className="flex flex-col gap-2">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary)] file:text-white hover:file:opacity-90"
+          />
+          {uploading && <span className="text-sm text-gray-500">이미지 업로드 중...</span>}
+          <Textarea
+            value={values.imageUrls}
+            onChange={(e) => setValues({ ...values, imageUrls: e.target.value })}
+            rows={3}
+          />
+        </div>
       </Field>
       {error && (
         <p className="text-sm" style={{ color: "var(--color-danger)" }}>
