@@ -21,6 +21,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to DockerHub
+        # Dependabot 이 만든 pull_request 에는 저장소 시크릿이 전달되지 않는다.
+        # 조건이 없으면 모든 Dependabot PR 에서 이 스텝이 실패해 CI 가 상시 빨간색이 된다.
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -32,6 +35,9 @@ jobs:
           PROJECT_NAME=$(jq -r .name package.json)
           echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
 
+      # Dependabot PR 에는 시크릿이 없어 DOCKERHUB_USERNAME 이 빈 문자열이 된다.
+      # 그대로 두면 태그가 "/<name>:latest" 가 되어 buildx 가 invalid reference 로 죽는다.
+      # push 하지 않는 PR 빌드에서는 태그 이름 자체가 의미 없으므로 폴백을 쓴다.
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -40,8 +46,8 @@ jobs:
           target: production
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME || 'ci-local' }}/${{ env.PROJECT_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME || 'ci-local' }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
 
       # DevSecOps SCA rollout (architecture#15 / architecture#17): scan the image we just
       # built/pushed for known OS + npm vulnerabilities. Report-only for now —
@@ -53,7 +59,7 @@ jobs:
         if: github.event_name == 'push'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME || 'ci-local' }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"

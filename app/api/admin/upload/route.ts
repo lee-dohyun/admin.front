@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     
     // 타임스탬프와 랜덤 문자열을 사용해 파일명 생성
     const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 8);
+    const randomString = crypto.randomUUID().substring(0, 8);
     const extension = file.name.split('.').pop() || 'png';
     const filename = `${timestamp}-${randomString}.${extension}`;
     

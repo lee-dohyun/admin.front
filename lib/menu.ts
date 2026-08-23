@@ -13,8 +13,12 @@ export interface MenuItem {
    */
   apiPrefixes?: string[];
   /**
-   * 이 메뉴에 접근하기 위해 필요한 역할 목록.
-   * 인증된 모든 사용자에게 공개하려면 빈 배열 `[]`을 명시해야 합니다. (누락 시 컴파일 타임 에러)
+   * 이 메뉴와 `apiPrefixes`에 접근할 수 있는 역할. **선택 항목이 아니다.**
+   *
+   * `hasPermission`은 목록이 비어 있으면 `true`를 반환한다 — 즉 역할을 적지 않은 항목은
+   * 인증된 staff 전원에게 열린다. 규칙을 아예 등록하지 않으면 거부되는 것과 정반대 결과라
+   * 리뷰에서 눈치채기 어렵다. 그래서 타입 단계에서 누락을 막는다.
+   * 전원 공개가 실제 의도라면 `[]`를 명시적으로 적어 의도를 드러낼 것.
    */
   requiredRoles: Role[];
   requiredAttributes?: Record<string, string | string[]>;

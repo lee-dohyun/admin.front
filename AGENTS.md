@@ -76,8 +76,14 @@ export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
 전체가 인증만 되면 역할과 무관하게 호출 가능**했다. deny 분기 안에 API 전용 403 응답 코드가
 있었던 것으로 보아 검사 대상으로 의도는 되어 있었으나 도달할 수 없는 코드였다.
 
-`hasPermission` 함수 자체는 파라미터가 선택적이라 역할(roles)이나 속성(attributes)을 안 넘기면 "인증만으로 통과"(`true`)를 반환한다. (이는 `RequirePermission` 컴포넌트가 역할 검사 없이 속성 검사만 수행할 수 있도록 하기 위함이다.)
-하지만 `MenuItem` 인터페이스에서 `requiredRoles`는 타입 레벨 필수 필드(`Role[]`)다. 따라서 메뉴 항목을 추가하면서 역할을 빠뜨리면 컴파일 타임(타입 체커)에서 차단된다. (의도적으로 전원 공개를 하려면 빈 배열 `[]`을 명시해야 한다.)
+`hasPermission`은 `requiredRoles`가 비어 있으면 `true`를 반환한다 — "역할 미지정 = 전원 허용"이다.
+규칙 자체를 등록하지 않으면 거부되는 것과 **정반대 결과**라, 역할을 빠뜨리면 인증된 staff 전원에게
+조용히 열린다. 그래서 `MenuItem.requiredRoles`는 **필수 필드**다(선택 아님) — 빠뜨리면
+`npm run typecheck`가 깨진다. 전원 공개가 실제 의도라면 `[]`를 명시적으로 적을 것.
+
+`requiredRoles`가 타입상 필수인 것과 별개로, `hasPermission` **함수**의 파라미터는 여전히 선택이다
+(`RequirePermission`이 역할 없이 속성만으로 검사할 수 있어야 하기 때문). 이 컴포넌트에 역할도 속성도
+넘기지 않으면 인증만으로 통과하니, 게이트로 쓸 때는 조건을 반드시 명시할 것.
 
 ### 3. 게이트웨이가 페이지 경로의 쓰기 요청만 막는다 → Server Action 금지
 
@@ -147,7 +153,7 @@ npm run lint
 
 ---
 
-<!-- canon:begin sha=ec357b59ef79 src=~/msa/AGENTS.md -->
+<!-- canon:begin sha=e6e86cbd7515 src=~/msa/AGENTS.md -->
 ## 공통 캐논 (모든 AI 도구 공통)
 
 > **공통 캐논 (자동 주입 — 손으로 고치지 말 것).** 원본은 `~/msa/AGENTS.md`이고 이 블록은
@@ -200,6 +206,7 @@ npm run lint
 - 새 도메인은 기존 와일드카드 TLS 시크릿을 참조만 할 것 — Ingress에 `cert-manager.io/cluster-issuer` 어노테이션 추가 금지(와일드카드 인증서를 덮어쓰는 사고 이력).
 - Ingress는 `leedohyun-com-ingress.yaml`/`posselect-com-ingress.yaml` 두 파일에 host만 추가. 서비스별 개별 Ingress 금지.
 - CI는 main push → Docker 이미지 → CD(self-hosted runner) 즉시 프로덕션 반영. **문서만 바꿀 땐 커밋 메시지에 `[skip ci]`.**
+- **`~/msa` 매니페스트는 apply 전에 항상 `kubectl diff -f` 를 먼저 확인한다.** 이미지 태그(`:latest` ↔ 커밋 SHA)나 시크릿 값 등 라이브 상태와 어긋난(drift) 부분을 조용히 덮어써서 롤백되는 사고를 막기 위함이다.
 - 여러 서비스에 걸친 변경은 **배포 순서**를 먼저 설계할 것(예: gateway → front → api 순서를 지켜야 게스트 결제가 안 끊기는 사례, posselect #210).
 - `@posselect/ui` 변경은 Storybook만 자동 배포됨 — 소비 저장소 5개(customer/store/product/admin.front + posselect-shell)를 각각 재빌드해야 화면에 반영 (posselect #197).
 - **`[skip ci]`는 커밋 제목뿐 아니라 본문에서도 인식된다.** 다른 커밋을 인용하려고 본문에 그 문자열을 적으면 배포가 조용히 건너뛰어진다 — 실제로 product.api 캐시 수정이 이 때문에 배포되지 않았다(gateway#204).
