@@ -76,9 +76,8 @@ export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
 전체가 인증만 되면 역할과 무관하게 호출 가능**했다. deny 분기 안에 API 전용 403 응답 코드가
 있었던 것으로 보아 검사 대상으로 의도는 되어 있었으나 도달할 수 없는 코드였다.
 
-`hasPermission`은 `requiredRoles`가 비어 있으면 `true`를 반환한다 — "역할 미지정 = 전원 허용"이다.
-따라서 메뉴 항목을 추가하면서 `requiredRoles`를 빠뜨리면 인증된 staff 전원에게 열린다.
-규칙 자체를 등록하지 않는 것과는 다른 결과이니 주의할 것.
+`hasPermission` 함수 자체는 파라미터가 선택적이라 역할(roles)이나 속성(attributes)을 안 넘기면 "인증만으로 통과"(`true`)를 반환한다. (이는 `RequirePermission` 컴포넌트가 역할 검사 없이 속성 검사만 수행할 수 있도록 하기 위함이다.)
+하지만 `MenuItem` 인터페이스에서 `requiredRoles`는 타입 레벨 필수 필드(`Role[]`)다. 따라서 메뉴 항목을 추가하면서 역할을 빠뜨리면 컴파일 타임(타입 체커)에서 차단된다. (의도적으로 전원 공개를 하려면 빈 배열 `[]`을 명시해야 한다.)
 
 ### 3. 게이트웨이가 페이지 경로의 쓰기 요청만 막는다 → Server Action 금지
 

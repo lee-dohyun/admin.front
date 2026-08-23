@@ -12,7 +12,11 @@ export interface MenuItem {
    * `resolveAccess`가 매칭하지 못하고, 미들웨어는 그런 경로를 **거부**한다.
    */
   apiPrefixes?: string[];
-  requiredRoles?: Role[];
+  /**
+   * 이 메뉴에 접근하기 위해 필요한 역할 목록.
+   * 인증된 모든 사용자에게 공개하려면 빈 배열 `[]`을 명시해야 합니다. (누락 시 컴파일 타임 에러)
+   */
+  requiredRoles: Role[];
   requiredAttributes?: Record<string, string | string[]>;
   children?: MenuItem[];
 }
