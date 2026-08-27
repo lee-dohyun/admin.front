@@ -22,6 +22,12 @@ type ProductFormValues = {
   price: string;
   stockQuantity: string;
   imageUrls: string;
+  listPrice: string;
+  ratingAvg: string;
+  reviewCount: string;
+  shippingBadge: string;
+  freeShipping: boolean;
+  brand: string;
 };
 
 const emptyValues: ProductFormValues = {
@@ -31,6 +37,12 @@ const emptyValues: ProductFormValues = {
   price: "",
   stockQuantity: "0",
   imageUrls: "",
+  listPrice: "",
+  ratingAvg: "",
+  reviewCount: "",
+  shippingBadge: "",
+  freeShipping: false,
+  brand: "",
 };
 
 export default function ProductForm({ productId }: { productId?: number }) {
@@ -64,6 +76,12 @@ export default function ProductForm({ productId }: { productId?: number }) {
           price: String(p.price),
           stockQuantity: String(p.stockQuantity),
           imageUrls: (p.images as { imageUrl: string }[]).map((i) => i.imageUrl).join("\n"),
+          listPrice: p.listPrice != null ? String(p.listPrice) : "",
+          ratingAvg: p.ratingAvg != null ? String(p.ratingAvg) : "",
+          reviewCount: p.reviewCount != null ? String(p.reviewCount) : "",
+          shippingBadge: p.shippingBadge ?? "",
+          freeShipping: Boolean(p.freeShipping),
+          brand: p.brand ?? "",
         });
         const activeVariantCount = (p.variants as { active: boolean }[]).filter((v) => v.active).length;
         setMultiSku(activeVariantCount > 1);
@@ -121,6 +139,12 @@ export default function ProductForm({ productId }: { productId?: number }) {
         price: Number(values.price),
         stockQuantity: Number(values.stockQuantity),
         imageUrls: values.imageUrls.split("\n").map((s) => s.trim()).filter(Boolean),
+        listPrice: values.listPrice ? Number(values.listPrice) : null,
+        ratingAvg: values.ratingAvg ? Number(values.ratingAvg) : null,
+        reviewCount: values.reviewCount ? Number(values.reviewCount) : null,
+        shippingBadge: values.shippingBadge || null,
+        freeShipping: values.freeShipping,
+        brand: values.brand || null,
       });
       const res = await fetch(
         productId ? `/api/admin/products/${productId}` : "/api/admin/products",
@@ -200,6 +224,59 @@ export default function ProductForm({ productId }: { productId?: number }) {
           관리&quot;에서 SKU별로 수정하세요.
         </p>
       )}
+      <Field label="브랜드">
+        <Input
+          value={values.brand}
+          onChange={(e) => setValues({ ...values, brand: e.target.value })}
+        />
+      </Field>
+      <Field label="정가 (할인 전 가격 - 판매가보다 낮으면 할인율이 음수로 보입니다)">
+        <Input
+          type="number"
+          min={0}
+          value={values.listPrice}
+          onChange={(e) => setValues({ ...values, listPrice: e.target.value })}
+        />
+      </Field>
+      <div className="flex gap-3">
+        <Field label="평점 (0~5, 리뷰 기능 도입 전까지 수동 입력)">
+          <Input
+            type="number"
+            min={0}
+            max={5}
+            step={0.1}
+            value={values.ratingAvg}
+            onChange={(e) => setValues({ ...values, ratingAvg: e.target.value })}
+          />
+        </Field>
+        <Field label="리뷰 수 (수동 입력)">
+          <Input
+            type="number"
+            min={0}
+            value={values.reviewCount}
+            onChange={(e) => setValues({ ...values, reviewCount: e.target.value })}
+          />
+        </Field>
+      </div>
+      <Field label="배송 배지">
+        <select
+          value={values.shippingBadge}
+          onChange={(e) => setValues({ ...values, shippingBadge: e.target.value })}
+          className="input"
+        >
+          <option value="">없음</option>
+          <option value="로켓배송">로켓배송</option>
+          <option value="판매자로켓">판매자로켓</option>
+        </select>
+      </Field>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={values.freeShipping}
+          onChange={(e) => setValues({ ...values, freeShipping: e.target.checked })}
+        />
+        무료배송
+      </label>
       <Field label="이미지 URL (한 줄에 하나씩)">
         <div className="flex flex-col gap-2">
           <input
