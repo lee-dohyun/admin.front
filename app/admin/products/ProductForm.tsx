@@ -40,6 +40,10 @@ export default function ProductForm({ productId }: { productId?: number }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // SKU가 2개 이상이면 price/stockQuantity는 활성 variant 중 최저가/합계일 뿐 어느 SKU의
+  // 값도 아니다. 백엔드(product.api#47)도 이 경우 요청을 무시하므로, 여기서도 입력을 잠가
+  // "저장했는데 안 바뀐다"는 혼란을 막는다 - 실제 수정은 아래 SKU 관리에서.
+  const [multiSku, setMultiSku] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/categories")
@@ -61,6 +65,8 @@ export default function ProductForm({ productId }: { productId?: number }) {
           stockQuantity: String(p.stockQuantity),
           imageUrls: (p.images as { imageUrl: string }[]).map((i) => i.imageUrl).join("\n"),
         });
+        const activeVariantCount = (p.variants as { active: boolean }[]).filter((v) => v.active).length;
+        setMultiSku(activeVariantCount > 1);
       });
   }, [productId]);
 
@@ -174,6 +180,7 @@ export default function ProductForm({ productId }: { productId?: number }) {
           min={0}
           value={values.price}
           onChange={(e) => setValues({ ...values, price: e.target.value })}
+          disabled={multiSku}
           required
         />
       </Field>
@@ -183,9 +190,16 @@ export default function ProductForm({ productId }: { productId?: number }) {
           min={0}
           value={values.stockQuantity}
           onChange={(e) => setValues({ ...values, stockQuantity: e.target.value })}
+          disabled={multiSku}
           required
         />
       </Field>
+      {multiSku && (
+        <p className="text-sm text-muted">
+          SKU가 여러 개인 상품은 가격/재고를 여기서 수정할 수 없습니다. 아래 &quot;옵션 &amp; SKU
+          관리&quot;에서 SKU별로 수정하세요.
+        </p>
+      )}
       <Field label="이미지 URL (한 줄에 하나씩)">
         <div className="flex flex-col gap-2">
           <input
