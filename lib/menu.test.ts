@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type MenuItem, hasPermission, resolveAccess } from "./menu";
+import { type MenuItem, adminMenus, hasPermission, resolveAccess } from "./menu";
 
 describe("hasPermission", () => {
   describe("RBAC (역할) 검사", () => {
@@ -224,5 +224,32 @@ describe("resolveAccess / matchesPrefix (stretch)", () => {
 
   it("규칙이 정의되지 않은 경로는 undefined를 반환한다 (deny-by-default 전제)", () => {
     expect(resolveAccess(menus, "/admin/unknown")).toBeUndefined();
+  });
+});
+
+/**
+ * 실제 `adminMenus` 를 대상으로 하는 회귀 방지 테스트.
+ *
+ * 위 테스트들은 로컬 픽스처를 쓰므로 "실제 메뉴에 등록을 빠뜨렸다"를 잡지 못한다.
+ * `apiPrefixes` 누락은 화면만 열리고 API 는 deny-by-default 로 403 이 되는 형태로
+ * 드러나는데, 화면을 열어보기 전까지 눈에 띄지 않는다(admin.front#12).
+ */
+describe("adminMenus 등록 상태", () => {
+  it("회원 관리 화면 경로가 등록돼 있다", () => {
+    expect(resolveAccess(adminMenus, "/admin/members")?.title).toBe("회원 관리");
+  });
+
+  it("회원 관리 API 경로도 등록돼 있다 (누락하면 API가 403이 된다)", () => {
+    expect(resolveAccess(adminMenus, "/api/admin/members")?.title).toBe("회원 관리");
+    expect(resolveAccess(adminMenus, "/api/admin/members/some-uuid")?.title).toBe("회원 관리");
+  });
+
+  it("회원 관리는 MEMBER_MANAGER 또는 SYSTEM_ADMIN 만 접근한다", () => {
+    const rule = resolveAccess(adminMenus, "/api/admin/members")!;
+
+    expect(hasPermission(rule.requiredRoles, ["MEMBER_MANAGER"])).toBe(true);
+    expect(hasPermission(rule.requiredRoles, ["SYSTEM_ADMIN"])).toBe(true);
+    expect(hasPermission(rule.requiredRoles, ["ORDER_MANAGER"])).toBe(false);
+    expect(hasPermission(rule.requiredRoles, ["PRODUCT_MANAGER"])).toBe(false);
   });
 });

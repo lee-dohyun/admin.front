@@ -44,6 +44,14 @@ export const adminMenus: MenuItem[] = [
     apiPrefixes: ["/api/admin/orders"],
     requiredRoles: ["ORDER_MANAGER", "SYSTEM_ADMIN"],
   },
+  {
+    // 회원 삭제는 개인정보 파기라 되돌릴 수 없다. 상품/주문보다 좁게 연다.
+    // auth.api 의 AdminAuthInterceptor 도 같은 두 역할을 요구한다 — 한쪽만 고치면 판정이 갈린다.
+    title: "회원 관리",
+    href: "/admin/members",
+    apiPrefixes: ["/api/admin/members"],
+    requiredRoles: ["MEMBER_MANAGER", "SYSTEM_ADMIN"],
+  },
 ];
 
 /**
