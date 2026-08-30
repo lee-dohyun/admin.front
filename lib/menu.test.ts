@@ -252,4 +252,24 @@ describe("adminMenus 등록 상태", () => {
     expect(hasPermission(rule.requiredRoles, ["ORDER_MANAGER"])).toBe(false);
     expect(hasPermission(rule.requiredRoles, ["PRODUCT_MANAGER"])).toBe(false);
   });
+
+  /**
+   * 카테고리 수정/삭제는 `/api/admin/categories/{id}` 로 나간다(admin.front#40).
+   * 등록된 apiPrefixes 는 `/api/admin/categories` 하나뿐이라, 하위 경로가 이 규칙에
+   * 매칭되는지가 기능의 전제다 — 매칭되지 않으면 미들웨어가 deny-by-default 로 막아
+   * 수정/삭제 버튼이 전부 403 이 된다. 접두사를 지우거나 좁히는 변경을 잡는다.
+   */
+  it("카테고리 하위 API 경로가 같은 규칙에 매칭된다 (수정/삭제의 전제)", () => {
+    expect(resolveAccess(adminMenus, "/api/admin/categories")?.title).toBe("카테고리 관리");
+    expect(resolveAccess(adminMenus, "/api/admin/categories/9001")?.title).toBe("카테고리 관리");
+  });
+
+  it("카테고리 관리는 PRODUCT_MANAGER 또는 SYSTEM_ADMIN 만 접근한다", () => {
+    const rule = resolveAccess(adminMenus, "/api/admin/categories/9001")!;
+
+    expect(hasPermission(rule.requiredRoles, ["PRODUCT_MANAGER"])).toBe(true);
+    expect(hasPermission(rule.requiredRoles, ["SYSTEM_ADMIN"])).toBe(true);
+    expect(hasPermission(rule.requiredRoles, ["ORDER_MANAGER"])).toBe(false);
+    expect(hasPermission(rule.requiredRoles, [])).toBe(false);
+  });
 });
