@@ -57,4 +57,4 @@ jobs:
             5. 의존성 추가/갱신이 있다면 알려진 취약점이 없는가(이 시스템은 Next.js RCE 침해 이력이 있다).
             
             CI 는 Docker 빌드 성공만 확인하고 main push 가 곧 프로덕션 배포다. 확실한 결함만 지적할 것.
-          claude_args: --model claude-sonnet-5 --max-turns 15
+          claude_args: --model claude-opus-5-5 --max-turns 15
