@@ -11,6 +11,7 @@
 - [ ] 서브에이전트 검수(`AGENTS.md`) 및 코드 표준화를 준수했나요?
 - [ ] 새로운 기능에 대한 테스트를 작성했나요? (UI의 경우 Storybook)
 - [ ] 불필요한 콘솔 로그/주석 등을 제거했나요?
+- [ ] 사용자에게 보이는 동작이 바뀌었다면 `docs/user-guide/` 설명서를 같이 고쳤나요? ([표준 양식](https://github.com/lee-dohyun/architecture/blob/main/docs/USER_GUIDE_STANDARD.md))
 
 ## 📸 스크린샷 (UI 변경이 있는 경우)
 <!-- UI 변경 사항이 있다면 전/후 스크린샷을 첨부해주세요. -->
