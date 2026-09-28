@@ -273,3 +273,18 @@ describe("adminMenus 등록 상태", () => {
     expect(hasPermission(rule.requiredRoles, [])).toBe(false);
   });
 });
+
+describe("상품 검수(admin.front#47) 접근 규칙", () => {
+  it("화면과 API 모두 규칙이 있고 PRODUCT_MANAGER/SYSTEM_ADMIN 만 허용한다", () => {
+    for (const path of ["/admin/submissions", "/admin/submissions/3", "/api/admin/submissions", "/api/admin/submissions/3/approve"]) {
+      const access = resolveAccess(adminMenus, path);
+      expect(access?.title).toBe("상품 검수");
+      expect(hasPermission(access!.requiredRoles, ["PRODUCT_MANAGER"])).toBe(true);
+      expect(hasPermission(access!.requiredRoles, ["SYSTEM_ADMIN"])).toBe(true);
+      expect(hasPermission(access!.requiredRoles, ["ORDER_MANAGER"])).toBe(false);
+    }
+  });
+  it("비슷한 이름의 경로는 규칙을 물려받지 않는다", () => {
+    expect(resolveAccess(adminMenus, "/api/admin/submissions-export")).toBeUndefined();
+  });
+});

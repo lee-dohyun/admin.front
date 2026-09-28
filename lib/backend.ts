@@ -1,3 +1,5 @@
+import type { NextRequest } from "next/server";
+
 export const PRODUCT_API_URL =
   process.env.PRODUCT_API_URL ?? "http://product-api.customer.svc.cluster.local:8080";
 export const ORDER_API_URL =
@@ -17,4 +19,15 @@ export function adminHeaders(token: string): Record<string, string> {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
+}
+
+/**
+ * 관리자 토큰. middleware 가 matcher(`/api/admin/**`)에서 검증을 마친 뒤라 여기서는 꺼내기만 한다.
+ *
+ * GET 에도 실어 보내야 한다(product.api#74): product.api 는 토큰 없는 GET 을 공개 조회로 보고
+ * LIVE 상품만 준다. 토큰을 빼먹으면 파트너가 만든 DRAFT·검수 중 상품이 관리자 목록에서 사라지고
+ * 상세는 404 가 된다 — 에러 없이 "상품이 없다"로 보이는 게 함정이다.
+ */
+export function adminToken(request: NextRequest): string {
+  return request.cookies.get("ADMIN_ACCESS_TOKEN")?.value ?? "";
 }
