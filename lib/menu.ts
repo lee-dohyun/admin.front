@@ -33,6 +33,14 @@ export const adminMenus: MenuItem[] = [
     requiredRoles: ["PRODUCT_MANAGER", "SYSTEM_ADMIN"],
   },
   {
+    // 파트너가 제출한 상품 심사(admin.front#47). 승인하면 상품이 즉시 LIVE(쇼핑몰 노출)가 된다.
+    // product.api AdminAuthInterceptor 도 /api/submissions 에 PRODUCT_MANAGER 를 요구한다 — 한쪽만 고치면 판정이 갈린다.
+    title: "상품 검수",
+    href: "/admin/submissions",
+    apiPrefixes: ["/api/admin/submissions"],
+    requiredRoles: ["PRODUCT_MANAGER", "SYSTEM_ADMIN"],
+  },
+  {
     title: "카테고리 관리",
     href: "/admin/categories",
     apiPrefixes: ["/api/admin/categories"],
