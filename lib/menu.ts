@@ -41,6 +41,14 @@ export const adminMenus: MenuItem[] = [
     requiredRoles: ["PRODUCT_MANAGER", "SYSTEM_ADMIN"],
   },
   {
+    // 입점 심사·판매자 관리·파트너 계정 발급(admin.front#23). PARTNER 는 staff realm 의 "입점 담당 직원" 역할이다
+    // (외부 파트너 계정이 아니다 — Glossary §8-1). product.api AdminAuthInterceptor 도 /api/sellers 에 PARTNER 를 요구한다.
+    title: "판매자 관리",
+    href: "/admin/sellers",
+    apiPrefixes: ["/api/admin/sellers"],
+    requiredRoles: ["PARTNER", "SYSTEM_ADMIN"],
+  },
+  {
     title: "카테고리 관리",
     href: "/admin/categories",
     apiPrefixes: ["/api/admin/categories"],
