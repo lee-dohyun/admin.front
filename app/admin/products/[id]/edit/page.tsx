@@ -1,5 +1,6 @@
 import ProductForm from "../../ProductForm";
 import VariantManager from "../../VariantManager";
+import PolicyEditor from "../../PolicyEditor";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -8,6 +9,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       <h1 className="text-2xl font-bold mb-6">상품 수정</h1>
       <ProductForm productId={Number(id)} />
       <VariantManager productId={Number(id)} />
+      <PolicyEditor productId={Number(id)} />
     </main>
   );
 }
