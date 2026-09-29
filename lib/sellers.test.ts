@@ -27,7 +27,12 @@ describe("전이 규칙 — product.api SellerService.VALID_TRANSITIONS 와 같�
 
 describe("validateTransition", () => {
   it("허용된 전이는 통과", () => expect(validateTransition("IN_REVIEW", "ACTIVE", null)).toBeNull());
-  it("허용되지 않은 전이 거부", () => expect(validateTransition("DRAFT", "ACTIVE", null)).not.toBeNull());
+  it("허용되지 않은 전이 거부 — 문구는 화면 라벨(상태 코드 노출 금지)", () => {
+    const msg = validateTransition("DRAFT", "ACTIVE", null);
+    expect(msg).toContain("작성 중");
+    expect(msg).toContain("운영 중");
+    expect(msg).not.toMatch(/DRAFT|ACTIVE/);
+  });
   it("반려·정지·해지는 사유 코드 필수", () => {
     expect(validateTransition("IN_REVIEW", "REJECTED", null)).not.toBeNull();
     expect(validateTransition("IN_REVIEW", "REJECTED", "NOPE")).not.toBeNull();

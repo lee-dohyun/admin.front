@@ -56,7 +56,12 @@ export function allowedActions(status: string): { to: SellerStatus; label: strin
 /** 전이 요청 검증 — 허용 목록에 없거나, 사유가 필요한데 코드가 없으면 사람이 읽을 사유. 통과면 null. */
 export function validateTransition(from: string, to: string, reasonCode: string | null | undefined): string | null {
   const action = allowedActions(from).find((a) => a.to === to);
-  if (!action) return `현재 상태(${from})에서 ${to}(으)로 바꿀 수 없습니다.`;
+  if (!action) {
+    // 사용자에게 보이는 문구라 상태 코드(DRAFT 등) 대신 화면 라벨을 쓴다.
+    const fromLabel = SELLER_STATUS_LABEL[from as SellerStatus]?.label ?? from;
+    const toLabel = SELLER_STATUS_LABEL[to as SellerStatus]?.label ?? to;
+    return `지금 상태(${fromLabel})에서는 ${toLabel}(으)로 바꿀 수 없습니다. 화면을 새로고침해 주세요.`;
+  }
   if (action.needsReason && !REASON_CODES.some((r) => r.code === reasonCode)) return "사유를 선택해 주세요.";
   return null;
 }
