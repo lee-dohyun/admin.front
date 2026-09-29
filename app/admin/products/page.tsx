@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BlueprintCorners, Table } from "@posselect/ui";
+import { BlueprintCorners, Button, Table, Tag } from "@posselect/ui";
 import CsvImportModal from "./CsvImportModal";
+import { PRODUCT_STATUS_LABEL, type ProductStatus } from "@/lib/products";
 
 type ProductSummary = {
   id: number;
@@ -11,20 +12,40 @@ type ProductSummary = {
   price: number;
   stockQuantity: number;
   thumbnailUrl: string | null;
+  status: ProductStatus;
+  sellerId: number;
+  sellerName: string;
 };
+
+// 파트너가 임시저장한 상품(미공개)과 판매 중 상품을 구별해 보기 위한 필터(admin.front#50).
+const FILTERS: { value: string; label: string }[] = [
+  { value: "ALL", label: "전체" },
+  { value: "LIVE", label: "판매 중" },
+  { value: "DRAFT", label: "미공개" },
+  { value: "PAUSED", label: "판매 중지" },
+  { value: "ARCHIVED", label: "보관" },
+];
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [filter, setFilter] = useState("ALL");
+  const [error, setError] = useState("");
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
 
   const load = () => {
-    fetch("/api/admin/products")
-      .then((res) => res.json())
-      .then(setProducts)
-      .catch(() => setProducts([]));
+    setError("");
+    fetch(`/api/admin/products?status=${filter}`, { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        setProducts(await res.json());
+      })
+      .catch(() => {
+        setProducts([]);
+        setError("상품 목록을 불러오지 못했습니다.");
+      });
   };
 
-  useEffect(load, []);
+  useEffect(load, [filter]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("이 상품을 삭제하시겠습니까?")) return;
@@ -49,10 +70,28 @@ export default function AdminProductsPage() {
           </Link>
         </div>
       </div>
+      <div className="flex gap-2 mb-4">
+        {FILTERS.map((f) => (
+          <Button
+            key={f.value}
+            variant={filter === f.value ? "primary" : "secondary"}
+            onClick={() => setFilter(f.value)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+      {error && (
+        <p className="text-sm mb-3" style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
+      )}
       <Table>
         <thead>
           <tr>
+            <th>상태</th>
             <th>이름</th>
+            <th>판매자</th>
             <th>가격</th>
             <th>재고</th>
             <th></th>
@@ -61,7 +100,13 @@ export default function AdminProductsPage() {
         <tbody>
           {products.map((p) => (
             <tr key={p.id}>
+              <td>
+                <Tag variant={PRODUCT_STATUS_LABEL[p.status]?.variant ?? "neutral"}>
+                  {PRODUCT_STATUS_LABEL[p.status]?.label ?? p.status}
+                </Tag>
+              </td>
               <td>{p.name}</td>
+              <td>{p.sellerName}</td>
               <td>{p.price.toLocaleString()}원</td>
               <td>{p.stockQuantity}</td>
               <td className="text-right">
