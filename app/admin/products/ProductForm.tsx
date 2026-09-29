@@ -95,6 +95,7 @@ export default function ProductForm({ productId }: { productId?: number }) {
     setUploading(true);
     try {
       const newUrls: string[] = [];
+      const failures: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData();
         formData.append("file", files[i]);
@@ -108,8 +109,13 @@ export default function ProductForm({ productId }: { productId?: number }) {
           const data = await res.json();
           newUrls.push(data.imageUrl);
         } else {
-          console.error("Upload failed for file", files[i].name);
+          // 서버가 형식·크기 거부 사유를 준다(415/413) — 조용히 건너뛰지 않고 알린다.
+          const data = await res.json().catch(() => ({}));
+          failures.push(`${files[i].name}: ${data.error ?? "업로드 실패"}`);
         }
+      }
+      if (failures.length > 0) {
+        alert(`일부 이미지를 올리지 못했습니다.\n${failures.join("\n")}`);
       }
       if (newUrls.length > 0) {
         setValues((prev) => ({
@@ -238,26 +244,11 @@ export default function ProductForm({ productId }: { productId?: number }) {
           onChange={(e) => setValues({ ...values, listPrice: e.target.value })}
         />
       </Field>
-      <div className="flex gap-3">
-        <Field label="평점 (0~5, 리뷰 기능 도입 전까지 수동 입력)">
-          <Input
-            type="number"
-            min={0}
-            max={5}
-            step={0.1}
-            value={values.ratingAvg}
-            onChange={(e) => setValues({ ...values, ratingAvg: e.target.value })}
-          />
-        </Field>
-        <Field label="리뷰 수 (수동 입력)">
-          <Input
-            type="number"
-            min={0}
-            value={values.reviewCount}
-            onChange={(e) => setValues({ ...values, reviewCount: e.target.value })}
-          />
-        </Field>
-      </div>
+      {/*
+        평점·리뷰 수 입력칸은 없앴다(admin.front#48) — 관리자가 직접 적는 평점은 실서비스에서 허위 표시가 된다.
+        값 자체는 불러온 그대로 저장 요청에 되돌려 보낸다: product.api 수정 API 는 null 을 "비우라"로
+        처리하므로, 안 보내면 수정 한 번에 기존 평점이 지워진다. 리뷰 기능이 생기면 집계값으로 바뀔 자리다.
+      */}
       <Field label="배송 배지">
         <select
           value={values.shippingBadge}
@@ -281,7 +272,7 @@ export default function ProductForm({ productId }: { productId?: number }) {
         <div className="flex flex-col gap-2">
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={handleFileUpload}
             disabled={uploading}
