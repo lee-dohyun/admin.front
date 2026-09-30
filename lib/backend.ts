@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 export const PRODUCT_API_URL =
   process.env.PRODUCT_API_URL ?? "http://product-api.customer.svc.cluster.local:8080";
@@ -30,4 +30,22 @@ export function adminHeaders(token: string): Record<string, string> {
  */
 export function adminToken(request: NextRequest): string {
   return request.cookies.get("ADMIN_ACCESS_TOKEN")?.value ?? "";
+}
+
+/**
+ * 백엔드 응답을 파싱하지 않고 상태·본문·Content-Type 그대로 중계한다(admin.front#62).
+ *
+ * `NextResponse.json(await res.json())` 로 무조건 파싱하면 백엔드의 텍스트 에러 본문
+ * (product.api 의 404 `product not found ...`)에서 SyntaxError 가 나 500 으로 바뀐다.
+ * JSON 이라고 선언하지도 않는다 — 화면이 에러 사유를 파싱하다 뭉뚱그리는 걸 막는다(product.api#61).
+ */
+export async function relay(res: Response): Promise<NextResponse> {
+  // 204/205/304 는 본문을 가질 수 없다 — 빈 문자열이라도 넣으면 Response 생성자가 던진다.
+  if (res.status === 204 || res.status === 205 || res.status === 304) {
+    return new NextResponse(null, { status: res.status });
+  }
+  return new NextResponse(await res.text(), {
+    status: res.status,
+    headers: { "Content-Type": res.headers.get("Content-Type") ?? "text/plain; charset=utf-8" },
+  });
 }

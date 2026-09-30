@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { AUTH_API_URL, adminHeaders } from "@/lib/backend";
+import { NextRequest } from "next/server";
+import { AUTH_API_URL, adminHeaders, relay } from "@/lib/backend";
 
 /**
  * 회원 목록 중계.
@@ -24,5 +24,5 @@ export async function GET(request: NextRequest) {
     headers: adminHeaders(token),
     cache: "no-store",
   });
-  return NextResponse.json(await res.json(), { status: res.status });
+  return relay(res);
 }

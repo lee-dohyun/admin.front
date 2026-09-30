@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PRODUCT_API_URL, adminHeaders, adminToken } from "@/lib/backend";
+import { PRODUCT_API_URL, adminHeaders, relay, adminToken } from "@/lib/backend";
 import { parseProductStatusFilter } from "@/lib/products";
 
 /**
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     cache: "no-store",
     headers: adminHeaders(adminToken(request)),
   });
-  return NextResponse.json(await res.json(), { status: res.status });
+  return relay(res);
 }
 
 export async function POST(request: NextRequest) {
