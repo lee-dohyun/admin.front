@@ -1,14 +1,6 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 import sonarjs from "eslint-plugin-sonarjs";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
 
 // SonarQube 룰셋의 코드스멜 탐지만 ESLint 플러그인으로 가져온 것이다(#28).
 // SonarQube 서버 자체는 도입하지 않았다 — Postgres 백엔드를 요구하는 상시 서비스를
@@ -43,7 +35,15 @@ const SONARJS_OVERRIDES = {
 };
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Next 16 부터 eslint-config-next 는 flat config 를 직접 export 한다(FlatCompat 은 순환 참조로 깨진다).
+  ...nextVitals,
+  ...nextTs,
+  {
+    // eslint-config-next 16 이 새로 켠 react-hooks v7 규칙. 업그레이드 시점에 기존 코드 여러 곳
+    // (목록 화면의 effect 안 setState)이 걸렸다. 업그레이드 PR 에서 화면 로직을 바꾸지 않으려
+    // warn 으로 둔다 — 신호는 남기고 별도 이슈로 고친다(partner.front#16 과 같은 처리).
+    rules: { "react-hooks/set-state-in-effect": "warn" },
+  },
   {
     // 소스 코드만 대상. 설정 파일(*.mjs/*.config.ts)까지 걸면 노이즈만 는다.
     files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
