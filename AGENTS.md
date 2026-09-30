@@ -14,7 +14,7 @@ app/admin/{products,categories,orders}   화면 (products: 목록/신규/수정 
 app/api/admin/**                         product-api / order-api로 중계하는 자체 API 라우트
 app/api/{login,logout}                   Keycloak staff realm 직접 로그인 / 쿠키 삭제
 app/login                                로그인 화면
-middleware.ts                            인증 + RBAC 게이트 (이 저장소의 보안 경계 전부)
+proxy.ts                            인증 + RBAC 게이트 (이 저장소의 보안 경계 전부)
 lib/auth.ts                              ADMIN_ACCESS_TOKEN 검증 (staff realm JWKS)
 lib/menu.ts                              메뉴 트리 = RBAC/ABAC 규칙 정의
 lib/backend.ts                           product-api / order-api 클러스터 내부 주소 + Bearer 헤더
@@ -33,18 +33,18 @@ components/auth/RequirePermission.tsx    서버 컴포넌트용 권한 게이트
 - `admin.posselect.com`은 게이트웨이의 `protected-hosts`(=`customer.posselect.com`)에도
   `optional-auth-hosts`(=`product.posselect.com`)에도 **없다.** 따라서 `JwtAuthenticationFilter`는
   이 호스트에 대해 `X-User-*`를 **제거만 하고 아무것도 주입하지 않는다.**
-- 인증은 전적으로 `middleware.ts`가 한다: `ADMIN_ACCESS_TOKEN` 쿠키를 Keycloak **staff** realm
+- 인증은 전적으로 `proxy.ts`가 한다: `ADMIN_ACCESS_TOKEN` 쿠키를 Keycloak **staff** realm
   (`https://keycloak.posselect.com/realms/staff`) JWKS로 직접 검증(`lib/auth.ts`). 고객용
   `ACCESS_TOKEN`(customer realm)과는 완전히 별개의 쿠키/realm이다.
 - 백엔드 호출은 그 staff 토큰을 `Authorization: Bearer`로 그대로 전달하고, product-api/order-api가
   같은 JWKS로 **재검증**한다(`lib/backend.ts` 주석). 서비스 간 공유 비밀값이 없다.
 
-→ 결론: 게이트웨이가 막아 줄 것이라 가정하지 말 것. **`middleware.ts`의 `matcher`가 이 앱의 보안
+→ 결론: 게이트웨이가 막아 줄 것이라 가정하지 말 것. **`proxy.ts`의 `matcher`가 이 앱의 보안
 경계 그 자체다.**
 
 ## 실제 함정 (전부 이 저장소 코드/게이트웨이 설정에서 확인된 것)
 
-### 1. `middleware.ts`의 `matcher` 밖은 통째로 무인증이다
+### 1. `proxy.ts`의 `matcher` 밖은 통째로 무인증이다
 
 ```ts
 export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
@@ -58,7 +58,7 @@ export const config = { matcher: ["/admin/:path*", "/api/admin/:path*"] };
 
 ### 2. 인가는 deny-by-default다 — 규칙 없는 경로는 거부된다
 
-`middleware.ts`는 인증 후 `resolveAccess(adminMenus, pathname)`로 적용할 규칙을 찾고,
+`proxy.ts`는 인증 후 `resolveAccess(adminMenus, pathname)`로 적용할 규칙을 찾고,
 **규칙을 못 찾으면 통과가 아니라 거부한다.** 새 화면이나 새 API를 추가하면 `lib/menu.ts`에
 등록하기 전까지 403이 난다. 이는 버그가 아니라 의도된 동작이다 — 등록을 잊었을 때
 "조용히 무방비"가 아니라 "눈에 띄게 막힘"이 되도록 뒤집어 놓은 것이다.

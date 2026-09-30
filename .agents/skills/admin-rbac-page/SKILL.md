@@ -54,7 +54,7 @@ export default function NewAdminPage() {
 
 ### 4. 미들웨어 확인
 
-[`middleware.ts`](file:///home/leedohyun/git/admin.front/middleware.ts) 에서 새 경로가 인증 체크 대상에 포함되는지 확인.
+[`proxy.ts`](file:///home/leedohyun/git/admin.front/proxy.ts) 에서 새 경로가 인증 체크 대상에 포함되는지 확인.
 
 ### 5. API 연동
 

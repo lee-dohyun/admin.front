@@ -4,7 +4,7 @@ import { PRODUCT_API_URL, adminHeaders } from "@/lib/backend";
 /**
  * 카테고리 수정/삭제 중계 (product.api#61).
  *
- * 인가는 이 파일이 아니라 `middleware.ts` 가 건다 — `lib/menu.ts` 의 "카테고리 관리" 항목이
+ * 인가는 이 파일이 아니라 `proxy.ts` 가 건다 — `lib/menu.ts` 의 "카테고리 관리" 항목이
  * `/api/admin/categories` 를 apiPrefixes 로 갖고 있고, `matchesPrefix` 가 세그먼트 경계까지
  * 보므로 하위 경로인 이 라우트도 같은 규칙(PRODUCT_MANAGER / SYSTEM_ADMIN)에 매칭된다.
  * menu.ts 에 따로 추가할 것은 없다.

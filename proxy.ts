@@ -21,7 +21,7 @@ export const config = {
  * 인증만 되면 역할과 무관하게 호출 가능**했다. 화면에서 버튼이 안 보이는 것과 API가 막히는 것은
  * 다른 문제이며, 우회는 API를 직접 부르면 그만이었다.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApi = pathname.startsWith("/api/");
 
