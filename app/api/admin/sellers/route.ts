@@ -3,7 +3,7 @@ import { PRODUCT_API_URL, adminHeaders, adminToken } from "@/lib/backend";
 import { parseSellerStatusFilter } from "@/lib/sellers";
 
 /**
- * 판매자 목록·신규 등록(admin.front#23). 인가: middleware(`/api/admin/sellers` → PARTNER|SYSTEM_ADMIN)와
+ * 판매자 목록·신규 등록(admin.front#23). 인가: proxy(`/api/admin/sellers` → PARTNER|SYSTEM_ADMIN)와
  * product.api AdminAuthInterceptor(/api/sellers → PARTNER, GET 포함 — product.api#74)가 각각 본다.
  */
 export async function GET(request: NextRequest) {

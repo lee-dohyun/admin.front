@@ -4,7 +4,7 @@ import { AUTH_API_URL, adminHeaders, relay } from "@/lib/backend";
 /**
  * 회원 목록 중계.
  *
- * `ADMIN_ACCESS_TOKEN` non-null 단언이 안전한 근거는 `middleware.ts` 의 사전 검사다
+ * `ADMIN_ACCESS_TOKEN` non-null 단언이 안전한 근거는 `proxy.ts` 의 사전 검사다
  * (이 라우트는 `/api/admin/**` 이라 matcher 안에 있다). 경로를 옮기면 그 전제가 사라진다.
  */
 export async function GET(request: NextRequest) {

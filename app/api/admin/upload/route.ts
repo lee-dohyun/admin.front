@@ -14,7 +14,7 @@ const s3Client = new S3Client({
 });
 
 /**
- * 관리자 상품 이미지 업로드(admin.front#48). 인증·역할은 middleware(`/api/admin/upload` → PRODUCT_MANAGER).
+ * 관리자 상품 이미지 업로드(admin.front#48). 인증·역할은 proxy(`/api/admin/upload` → PRODUCT_MANAGER).
  * 형식은 파일 바이트로 판정하고(JPG/PNG/WEBP), 5MB 를 넘으면 거부한다 — 규칙은 lib/upload.ts.
  */
 export async function POST(request: NextRequest) {

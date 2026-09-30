@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PRODUCT_API_URL, adminHeaders, adminToken } from "@/lib/backend";
 import { isValidId, validateReviewNote } from "@/lib/submissions";
 
-// Server Action 이 아니라 route handler 다(admin.front#47): middleware 의 /api/admin/** 인가를 그대로 탄다.
+// Server Action 이 아니라 route handler 다(admin.front#47): proxy 의 /api/admin/** 인가를 그대로 탄다.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isValidId(id)) return NextResponse.json({ error: "not found" }, { status: 404 });

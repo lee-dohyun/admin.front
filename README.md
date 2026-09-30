@@ -15,7 +15,7 @@ app/api/admin/**               product-api / order-api로 중계하는 자체 AP
 app/api/login, app/api/logout  Keycloak staff realm 로그인 / 쿠키 삭제
 app/login/                     로그인 화면
 app/page.tsx                   / → /admin/products 리다이렉트
-middleware.ts                  인증 + RBAC 게이트 (이 앱의 보안 경계)
+proxy.ts                  인증 + RBAC 게이트 (이 앱의 보안 경계)
 lib/auth.ts                    ADMIN_ACCESS_TOKEN 검증 (staff realm JWKS, jose)
 lib/menu.ts                    메뉴 트리 = RBAC/ABAC 규칙 정의
 lib/backend.ts                 product-api / order-api 클러스터 내부 주소 + Bearer 헤더
@@ -28,7 +28,7 @@ components/auth/RequirePermission.tsx   서버 컴포넌트용 권한 게이트
 
 - 로그인: `app/api/login`이 Keycloak **staff** realm에 password grant로 직접 토큰을 받아
   `ADMIN_ACCESS_TOKEN` 쿠키(httpOnly, secure)로 심는다. 고객용 `ACCESS_TOKEN`(customer realm)과 무관하다.
-- 검증: `middleware.ts`가 `matcher: ["/admin/:path*", "/api/admin/:path*"]`에 대해 `lib/auth.ts`로
+- 검증: `proxy.ts`가 `matcher: ["/admin/:path*", "/api/admin/:path*"]`에 대해 `lib/auth.ts`로
   JWT를 검증하고, `lib/menu.ts`의 `adminMenus`에 등록된 경로면 `requiredRoles`/`requiredAttributes`로
   RBAC/ABAC 검사를 한다. 실패 시 페이지는 403, `/api/`는 JSON 403, 비로그인은 `/login`으로 리다이렉트.
 - 백엔드 호출: `lib/backend.ts`가 staff 토큰을 `Authorization: Bearer`로 그대로 전달하고,
