@@ -260,14 +260,11 @@ export default function ProductForm({ productId }: { productId?: number }) {
           <option value="판매자로켓">판매자로켓</option>
         </select>
       </Field>
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={values.freeShipping}
-          onChange={(e) => setValues({ ...values, freeShipping: e.target.checked })}
-        />
-        무료배송
-      </label>
+      {/* 무료배송 표시는 판매 정책의 「배송비」에서 정한다(admin.front#56) — 체크박스를 따로 두면 정책과 어긋났다.
+          값은 불러온 그대로 되돌려 보내고(정책이 없는 상품의 기존 값 보존), 정책이 있으면 서버가 정책에서 파생한다. */}
+      <p className="text-sm">
+        무료배송: {values.freeShipping ? "예" : "아니오"} — 아래 「판매 정책」의 「배송비」에서 정합니다.
+      </p>
       <Field label="이미지 URL (한 줄에 하나씩)">
         <div className="flex flex-col gap-2">
           <input
