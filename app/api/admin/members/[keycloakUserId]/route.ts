@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_API_URL, adminHeaders } from "@/lib/backend";
+import { AUTH_API_URL, adminHeaders, relay } from "@/lib/backend";
 
 /**
  * 회원 파기 중계 — 되돌릴 수 없다.
@@ -27,5 +27,5 @@ export async function DELETE(
   if (res.status === 404) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  return NextResponse.json(await res.json(), { status: res.status });
+  return relay(res);
 }

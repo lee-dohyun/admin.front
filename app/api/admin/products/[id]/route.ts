@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PRODUCT_API_URL, adminHeaders, adminToken } from "@/lib/backend";
+import { PRODUCT_API_URL, adminHeaders, relay, adminToken } from "@/lib/backend";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     cache: "no-store",
     headers: adminHeaders(adminToken(request)),
   });
-  return NextResponse.json(await res.json(), { status: res.status });
+  return relay(res);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
