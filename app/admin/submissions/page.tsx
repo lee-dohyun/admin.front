@@ -26,15 +26,28 @@ export default function SubmissionQueuePage() {
   const [items, setItems] = useState<SubmissionSummary[] | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  // 필터를 바꾸면 목록을 비우고 오류를 지운다 — effect 안에서 동기 setState 로 하지 않고 바꾸는 곳(핸들러)에서
+  // 한다(react-hooks/set-state-in-effect, gateway#286).
+  const changeFilter = (value: string) => {
+    setFilter(value);
     setItems(null);
     setError("");
+  };
+
+  useEffect(() => {
+    let stale = false;
     fetch(`/api/admin/submissions?status=${filter}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(String(res.status));
-        setItems(await res.json());
+        const list = await res.json();
+        if (!stale) setItems(list);
       })
-      .catch(() => setError("검수 목록을 불러오지 못했습니다."));
+      .catch(() => {
+        if (!stale) setError("검수 목록을 불러오지 못했습니다.");
+      });
+    return () => {
+      stale = true;
+    };
   }, [filter]);
 
   return (
@@ -46,7 +59,7 @@ export default function SubmissionQueuePage() {
             key={f.value}
             type="button"
             variant={filter === f.value ? "primary" : "secondary"}
-            onClick={() => setFilter(f.value)}
+            onClick={() => changeFilter(f.value)}
           >
             {f.label}
           </Button>

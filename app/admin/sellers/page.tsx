@@ -33,17 +33,29 @@ export default function SellersPage() {
   const [form, setForm] = useState(EMPTY_NEW);
   const [createError, setCreateError] = useState("");
 
-  const load = () => {
+  // 필터를 바꾸면 목록을 비우고 오류를 지운다 — effect 안에서 동기 setState 로 하지 않고 바꾸는 곳(핸들러)에서
+  // 한다(react-hooks/set-state-in-effect, gateway#286).
+  const changeFilter = (value: string) => {
+    setFilter(value);
     setItems(null);
     setError("");
+  };
+
+  useEffect(() => {
+    let stale = false;
     fetch(`/api/admin/sellers?status=${filter}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(String(res.status));
-        setItems(await res.json());
+        const list = await res.json();
+        if (!stale) setItems(list);
       })
-      .catch(() => setError("판매자 목록을 불러오지 못했습니다."));
-  };
-  useEffect(load, [filter]);
+      .catch(() => {
+        if (!stale) setError("판매자 목록을 불러오지 못했습니다.");
+      });
+    return () => {
+      stale = true;
+    };
+  }, [filter]);
 
   const create = async () => {
     setCreateError("");
@@ -97,7 +109,7 @@ export default function SellersPage() {
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {FILTERS.map((f) => (
-          <Button key={f.value} type="button" variant={filter === f.value ? "primary" : "secondary"} onClick={() => setFilter(f.value)}>
+          <Button key={f.value} type="button" variant={filter === f.value ? "primary" : "secondary"} onClick={() => changeFilter(f.value)}>
             {f.label}
           </Button>
         ))}

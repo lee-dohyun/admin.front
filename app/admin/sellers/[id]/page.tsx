@@ -65,6 +65,19 @@ async function errorText(res: Response, fallback: string): Promise<string> {
  * 판매자 상세(admin.front#23) — 심사(상태 전이)·기본 정보/판매 설정·파트너 계정 발급·서류·이력을 한 화면에서.
  * "목록에서 하나 열고 → 판단하고 → 다음"이 끊기지 않게 서류와 이력을 같은 화면에 둔다(#23 설계 메모).
  */
+type Loaded = { detail: Detail; form: Record<EditKey, string>; account: Account | null | undefined };
+
+// setState 를 부르지 않는 순수 조회 — effect 에서 부르는 함수 안에 setState 가 있으면
+// react-hooks/set-state-in-effect 에 걸린다(gateway#286). 결과 반영은 호출부의 .then 에서 한다.
+async function fetchSeller(id: string | number): Promise<Loaded | null> {
+  const res = await fetch(`/api/admin/sellers/${id}`, { cache: "no-store" });
+  if (!res.ok) return null;
+  const detail: Detail = await res.json();
+  const form = Object.fromEntries(EDITABLE.map(([k]) => [k, detail.seller[k] ?? ""])) as Record<EditKey, string>;
+  const a = await fetch(`/api/admin/sellers/${id}/account`, { cache: "no-store" });
+  return { detail, form, account: a.ok ? (await a.json()).account : undefined };
+}
+
 export default function SellerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -76,19 +89,25 @@ export default function SellerDetailPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/sellers/${id}`, { cache: "no-store" });
-    if (!res.ok) return setMessage({ kind: "error", text: "판매자를 불러오지 못했습니다." });
-    const d: Detail = await res.json();
-    setDetail(d);
-    setForm(Object.fromEntries(EDITABLE.map(([k]) => [k, d.seller[k] ?? ""])) as Record<EditKey, string>);
-    const a = await fetch(`/api/admin/sellers/${id}/account`, { cache: "no-store" });
-    setAccount(a.ok ? (await a.json()).account : undefined);
-  }, [id]);
+  const apply = useCallback((l: Loaded | null) => {
+    if (!l) return setMessage({ kind: "error", text: "판매자를 불러오지 못했습니다." });
+    setDetail(l.detail);
+    setForm(l.form);
+    setAccount(l.account);
+  }, []);
+
+  // 상태 변경·저장 뒤 다시 읽을 때 쓴다(이벤트 핸들러에서만 호출).
+  const load = useCallback(async () => apply(await fetchSeller(id)), [id, apply]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let stale = false;
+    fetchSeller(id).then((l) => {
+      if (!stale) apply(l);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [id, apply]);
 
   if (!detail || !form) {
     return <main className="max-w-3xl mx-auto p-6">{message ? <p role="alert">{message.text}</p> : <p>불러오는 중...</p>}</main>;
