@@ -256,8 +256,8 @@ export default function ProductForm({ productId }: { productId?: number }) {
           className="input"
         >
           <option value="">없음</option>
-          <option value="로켓배송">로켓배송</option>
-          <option value="판매자로켓">판매자로켓</option>
+          {/* 자체 배지명(product.api#92, 2026-09-30 결정). 표시용이며 배송 약속과 연결돼 있지 않다. */}
+          <option value="최적 배송">최적 배송</option>
         </select>
       </Field>
       {/* 무료배송 표시는 판매 정책의 「배송비」에서 정한다(admin.front#56) — 체크박스를 따로 두면 정책과 어긋났다.
