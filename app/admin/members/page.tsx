@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Input, Table, Tag } from "@posselect/ui";
 
 type Member = {
@@ -55,9 +55,24 @@ export default function AdminMembersPage() {
   const [confirmInput, setConfirmInput] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(() => {
+  // 조회 조건(페이지·검색어)이 바뀌거나 삭제 뒤 다시 읽을 때 "불러오는 중" 표시·오류 초기화는 바꾸는 곳(핸들러)에서
+  // 한다 — effect 안에서 동기 setState 로 하지 않는다(react-hooks/set-state-in-effect, gateway#286).
+  const [reloadKey, setReloadKey] = useState(0);
+  const startLoading = () => {
     setLoading(true);
     setError("");
+  };
+  const load = () => {
+    startLoading();
+    setReloadKey((k) => k + 1);
+  };
+  const goToPage = (next: number) => {
+    startLoading();
+    setPage(next);
+  };
+
+  useEffect(() => {
+    let stale = false;
     const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
     if (search) {
       query.set("search", search);
@@ -69,19 +84,28 @@ export default function AdminMembersPage() {
         }
         return res.json();
       })
-      .then(setData)
+      .then((list) => {
+        if (!stale) setData(list);
+      })
       .catch((e: Error) => {
+        if (stale) return;
         setError(e.message);
         setData(null);
       })
-      .finally(() => setLoading(false));
-  }, [page, search]);
-
-  useEffect(load, [load]);
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [page, search, reloadKey]);
 
   const submitSearch = () => {
+    const next = searchInput.trim();
+    if (page === 0 && next === search) return; // 조건이 그대로면 다시 읽지 않는다(예전과 같다)
+    startLoading();
     setPage(0);
-    setSearch(searchInput.trim());
+    setSearch(next);
   };
 
   const openDeleteDialog = (member: Member) => {
@@ -202,7 +226,7 @@ export default function AdminMembersPage() {
             <button
               className="btn btn-secondary"
               disabled={page <= 0}
-              onClick={() => setPage((p) => p - 1)}
+              onClick={() => goToPage(page - 1)}
             >
               이전
             </button>
@@ -212,7 +236,7 @@ export default function AdminMembersPage() {
             <button
               className="btn btn-secondary"
               disabled={page + 1 >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => goToPage(page + 1)}
             >
               다음
             </button>

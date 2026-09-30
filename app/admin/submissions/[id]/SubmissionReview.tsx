@@ -53,6 +53,16 @@ async function errorText(res: Response): Promise<string> {
   }
 }
 
+type Loaded = { data: Detail } | { error: string };
+
+// setState 를 부르지 않는 순수 조회 — effect 에서 부르는 함수 안에 setState 가 있으면
+// react-hooks/set-state-in-effect 에 걸린다(gateway#286). 결과 반영은 호출부의 .then 에서 한다.
+async function fetchSubmission(id: number): Promise<Loaded> {
+  const res = await fetch(`/api/admin/submissions/${id}`, { cache: "no-store" });
+  if (!res.ok) return { error: res.status === 404 ? "제출을 찾을 수 없습니다." : "불러오지 못했습니다." };
+  return { data: (await res.json()) as Detail };
+}
+
 export default function SubmissionReview({ id }: { id: number }) {
   const [data, setData] = useState<Detail | null>(null);
   const [error, setError] = useState("");
@@ -60,18 +70,23 @@ export default function SubmissionReview({ id }: { id: number }) {
   const [busy, setBusy] = useState<"" | "approve" | "request-fix">("");
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/submissions/${id}`, { cache: "no-store" });
-    if (!res.ok) {
-      setError(res.status === 404 ? "제출을 찾을 수 없습니다." : "불러오지 못했습니다.");
-      return;
-    }
-    setData(await res.json());
-  }, [id]);
+  const apply = useCallback((r: Loaded) => {
+    if ("error" in r) setError(r.error);
+    else setData(r.data);
+  }, []);
+
+  // 승인·보완 요청 뒤 다시 읽을 때 쓴다(이벤트 핸들러에서만 호출).
+  const load = useCallback(async () => apply(await fetchSubmission(id)), [id, apply]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let stale = false;
+    fetchSubmission(id).then((r) => {
+      if (!stale) apply(r);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [id, apply]);
 
   const decide = async (decision: "approve" | "request-fix") => {
     if (decision === "approve" && !window.confirm("승인하면 이 상품이 즉시 쇼핑몰에 노출됩니다. 승인할까요?")) return;

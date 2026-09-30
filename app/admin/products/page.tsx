@@ -32,20 +32,36 @@ export default function AdminProductsPage() {
   const [error, setError] = useState("");
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
 
+  // 삭제·CSV 등록 뒤 목록을 다시 읽는다: reloadKey 를 올리면 아래 effect 가 다시 돈다.
+  const [reloadKey, setReloadKey] = useState(0);
   const load = () => {
     setError("");
+    setReloadKey((k) => k + 1);
+  };
+  // 필터를 바꾸면 오류를 지운다 — effect 안에서 동기 setState 로 하지 않고 바꾸는 곳(핸들러)에서 한다
+  // (react-hooks/set-state-in-effect, gateway#286).
+  const changeFilter = (value: string) => {
+    setFilter(value);
+    setError("");
+  };
+
+  useEffect(() => {
+    let stale = false;
     fetch(`/api/admin/products?status=${filter}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error(String(res.status));
-        setProducts(await res.json());
+        const list = await res.json();
+        if (!stale) setProducts(list);
       })
       .catch(() => {
+        if (stale) return;
         setProducts([]);
         setError("상품 목록을 불러오지 못했습니다.");
       });
-  };
-
-  useEffect(load, [filter]);
+    return () => {
+      stale = true;
+    };
+  }, [filter, reloadKey]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("이 상품을 삭제하시겠습니까?")) return;
@@ -75,7 +91,7 @@ export default function AdminProductsPage() {
           <Button
             key={f.value}
             variant={filter === f.value ? "primary" : "secondary"}
-            onClick={() => setFilter(f.value)}
+            onClick={() => changeFilter(f.value)}
           >
             {f.label}
           </Button>

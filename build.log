@@ -1,0 +1,60 @@
+▲ Next.js 16.3.7 (Turbopack)
+✓ Running next.config.ts took 58ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.4s
+  Running TypeScript ...
+  Finished TypeScript in 11.8s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/20) ...
+  Generating static pages using 11 workers (5/20) 
+  Generating static pages using 11 workers (10/20) 
+  Generating static pages using 11 workers (15/20) 
+✓ Generating static pages using 11 workers (20/20) in 1014ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /admin/categories
+├ ƒ /admin/members
+├ ƒ /admin/orders
+├ ƒ /admin/products
+├ ƒ /admin/products/[id]/edit
+├ ƒ /admin/products/new
+├ ƒ /admin/sellers
+├ ƒ /admin/sellers/[id]
+├ ƒ /admin/submissions
+├ ƒ /admin/submissions/[id]
+├ ƒ /api/admin/categories
+├ ƒ /api/admin/categories/[id]
+├ ƒ /api/admin/members
+├ ƒ /api/admin/members/[keycloakUserId]
+├ ƒ /api/admin/orders
+├ ƒ /api/admin/orders/[id]/shipment
+├ ƒ /api/admin/orders/[id]/shipment/deliver
+├ ƒ /api/admin/products
+├ ƒ /api/admin/products/[id]
+├ ƒ /api/admin/products/[id]/options
+├ ƒ /api/admin/products/[id]/options/[optionId]/values
+├ ƒ /api/admin/products/[id]/policy
+├ ƒ /api/admin/products/[id]/variants
+├ ƒ /api/admin/products/[id]/variants/[variantId]
+├ ƒ /api/admin/sellers
+├ ƒ /api/admin/sellers/[id]
+├ ƒ /api/admin/sellers/[id]/account
+├ ƒ /api/admin/sellers/[id]/transition
+├ ƒ /api/admin/submissions
+├ ƒ /api/admin/submissions/[id]
+├ ƒ /api/admin/submissions/[id]/approve
+├ ƒ /api/admin/submissions/[id]/request-fix
+├ ƒ /api/admin/upload
+├ ƒ /api/login
+├ ƒ /api/logout
+└ ƒ /login
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
