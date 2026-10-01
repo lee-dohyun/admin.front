@@ -153,7 +153,7 @@ npm run lint
 
 ---
 
-<!-- canon:begin sha=cd7e046044d0 src=~/msa/AGENTS.md -->
+<!-- canon:begin sha=8b53a9f595d2 src=~/msa/AGENTS.md -->
 ## 공통 캐논 (모든 AI 도구 공통)
 
 > **공통 캐논 (자동 주입 — 손으로 고치지 말 것).** 원본은 `~/msa/AGENTS.md`이고 이 블록은
@@ -190,7 +190,7 @@ npm run lint
 - Test Pyramid: Unit(JUnit5/Vitest, 가장 많이) → Integration(Testcontainers 실DB, 서비스 경계 검증) → E2E(Playwright, 핵심 플로우만 적게). 계층별 책임과 저장소별 현황은 `architecture` 저장소 `docs/2026-08-21-test-pyramid-strategy.md` 참고.
 - **위 "트랜잭션 / 정합성" 절의 예외가 여기도 그대로 적용된다** — 트랜잭션 전파·멱등성 변경은 단위 테스트로 검증이 성립하지 않으므로 실제 DB 상태 실측으로 검증한다.
 - **커버리지는 리포트만 하고 게이트로 쓰지 않는다(2026-08-21 결정).** 대부분 저장소가 0%에서 시작해 즉시 임계값을 걸면 모든 PR이 막힌다 — CI가 커버리지를 아티팩트로 남기고, 수치가 쌓이면 추후 임계값 도입을 재검토한다.
-- 기존 테스트가 있는 저장소는 `verify.sh`(§5-1)가 이미 push 전 실행을 강제한다 — 새 테스트를 추가하는 순간부터 자동으로 강제 대상이 된다. 별도 CI 배선이 필요 없다.
+- 기존 테스트가 있는 저장소는 `verify.sh`(§5-1)가 이미 push 전 실행을 강제한다 — 새 테스트를 추가하는 순간부터 자동으로 강제 대상이 된다. 단 이 강제는 **로컬 훅(push 하는 쪽)에서만** 걸린다 — CI 는 `verify.sh` 를 부르지 않는다(아래 §5-1).
 - 근거: architecture#14(장기 개선, TDD 도입), posselect-shell#26(Testcontainers 통합 테스트 표준, posselect #211 readOnly 전파 롤백 사례에서 도출).
 
 ### 보안 / 인가
@@ -395,7 +395,10 @@ Claude Code 는 SessionStart 훅이 자동 실행한다(로컬 모드). **훅이
 - **`<저장소>/scripts/verify.sh`** — push 전 검증의 **단일 진입점**. 스택을 자동 판별해
   `./gradlew test` 또는 `npm run typecheck/lint/test` 를 돌리고, `scripts/verify.d/*.sh` 추가 검사를 실행한다.
   문서·도구 설정만 바뀐 push 는 스스로 건너뛴다. 우회는 `MSA_SKIP_VERIFY=1`, 우회했다면 그 사실을 보고/이슈에 남길 것.
-  - 호출자 3곳이 **같은 스크립트**를 부른다: `.githooks/pre-push`(도구 무관) / `.claude/hooks/pre-push-verify.sh`(Claude) / CI.
+  - 호출자 2곳이 **같은 스크립트**를 부른다: `.githooks/pre-push`(도구 무관) / `.claude/hooks/pre-push-verify.sh`(Claude).
+  - **CI 는 `verify.sh` 를 부르지 않는다**(2026-10-01 실측: Spring 4개 저장소 `.github/` 의 `verify.sh` 참조 0건, gateway#288). `pr-check.yml` 이 `pull_request` 에서만 `./gradlew test` 를 직접 돌린다 —
+    같은 테스트지만 `verify.d/*.sh` 추가 검사와 문서 전용 스킵은 없다. 따라서 훅이 없는 경로(훅 미설치 클론, `--no-verify`/`MSA_SKIP_VERIFY=1`, 웹 편집)로 **main 에 직접 push 하면 아무 검증도 걸리지 않고 곧 배포된다.**
+    CI 가 `verify.sh` 를 부르게 하는 것은 별도 결정 사항이다.
   - `.githooks/pre-push` 는 클론마다 `~/msa/scripts/bootstrap-hooks.sh` 를 1회 돌려 `core.hooksPath` 를 걸어야 활성화된다
     (이 설정은 커밋되지 않는 로컬 설정이다). **새 클론·새 머신에서 제일 먼저 할 일.**
   - 2026-08-21 이전에는 검증이 `.claude/hooks/` 아래에만 있어 Claude 이외의 도구가 push 하면 아무 검증도 걸리지 않았다.
