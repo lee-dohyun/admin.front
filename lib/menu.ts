@@ -68,6 +68,15 @@ export const adminMenus: MenuItem[] = [
     apiPrefixes: ["/api/admin/members"],
     requiredRoles: ["MEMBER_MANAGER", "SYSTEM_ADMIN"],
   },
+  {
+    // 등급 정책(기준액·할인율) 관리(gateway#80). 할인율은 주문 금액에 바로 반영되는 금전적 혜택이다.
+    // 회원별 등급 수동 조정은 「회원 관리」 화면에 있고 /api/admin/members/{sub}/grade 라 위 규칙을 탄다.
+    // auth.api AdminAuthInterceptor 도 /api/admin/member-grades 에 같은 두 역할을 요구한다.
+    title: "등급 관리",
+    href: "/admin/member-grades",
+    apiPrefixes: ["/api/admin/member-grades"],
+    requiredRoles: ["MEMBER_MANAGER", "SYSTEM_ADMIN"],
+  },
 ];
 
 /**

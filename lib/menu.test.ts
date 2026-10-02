@@ -288,3 +288,19 @@ describe("상품 검수(admin.front#47) 접근 규칙", () => {
     expect(resolveAccess(adminMenus, "/api/admin/submissions-export")).toBeUndefined();
   });
 });
+
+describe("회원 등급 관리(gateway#80) 접근 규칙", () => {
+  it("등급 정책 화면과 API 는 「등급 관리」 규칙, MEMBER_MANAGER/SYSTEM_ADMIN 만 허용한다", () => {
+    for (const path of ["/admin/member-grades", "/api/admin/member-grades", "/api/admin/member-grades/SILVER"]) {
+      const access = resolveAccess(adminMenus, path);
+      expect(access?.title).toBe("등급 관리");
+      expect(hasPermission(access!.requiredRoles, ["MEMBER_MANAGER"])).toBe(true);
+      expect(hasPermission(access!.requiredRoles, ["SYSTEM_ADMIN"])).toBe(true);
+      expect(hasPermission(access!.requiredRoles, ["ORDER_MANAGER"])).toBe(false);
+      expect(hasPermission(access!.requiredRoles, [])).toBe(false);
+    }
+  });
+  it("회원 등급 수동 조정 API 는 「회원 관리」 규칙을 탄다", () => {
+    expect(resolveAccess(adminMenus, "/api/admin/members/some-uuid/grade")?.title).toBe("회원 관리");
+  });
+});
