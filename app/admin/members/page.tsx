@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Input, Table, Tag } from "@posselect/ui";
+import { GradeAdjustDialog } from "./GradeAdjustDialog";
 
 type Member = {
   keycloakUserId: string;
@@ -54,6 +55,9 @@ export default function AdminMembersPage() {
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [confirmInput, setConfirmInput] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  // 등급 조회·수동 조정 대화상자의 대상 회원(gateway#80)
+  const [gradeTarget, setGradeTarget] = useState<Member | null>(null);
 
   // 조회 조건(페이지·검색어)이 바뀌거나 삭제 뒤 다시 읽을 때 "불러오는 중" 표시·오류 초기화는 바꾸는 곳(핸들러)에서
   // 한다 — effect 안에서 동기 setState 로 하지 않는다(react-hooks/set-state-in-effect, gateway#286).
@@ -205,7 +209,13 @@ export default function AdminMembersPage() {
                   </td>
                   <td>{m.gradeName ?? "-"}</td>
                   <td>{formatJoinedAt(m)}</td>
-                  <td>
+                  <td style={{ display: "flex", gap: 8 }}>
+                    {/* 로컬 미연동 계정은 등급 자체가 없다 — 버튼을 내지 않는다. */}
+                    {m.linkedToLocal && (
+                      <button className="btn btn-secondary" onClick={() => setGradeTarget(m)}>
+                        등급
+                      </button>
+                    )}
                     <button className="btn btn-secondary" onClick={() => openDeleteDialog(m)}>
                       삭제
                     </button>
@@ -242,6 +252,15 @@ export default function AdminMembersPage() {
             </button>
           </div>
         </>
+      )}
+
+      {gradeTarget && (
+        <GradeAdjustDialog
+          key={gradeTarget.keycloakUserId}
+          member={gradeTarget}
+          onClose={() => setGradeTarget(null)}
+          onChanged={load}
+        />
       )}
 
       {deleteTarget && (
