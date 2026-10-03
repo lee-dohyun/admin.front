@@ -6,6 +6,9 @@ import {
   gradeErrorMessage,
   isManualAdjustment,
   toPolicyBody,
+  lockText,
+  toAdjustBody,
+  todayInKst,
   validateAdjust,
   validatePolicyForm,
 } from "./member-grades";
@@ -70,15 +73,66 @@ describe("toPolicyBody", () => {
   });
 });
 
+const unlocked = { code: "GENERAL", lock: { locked: false, until: null } };
+const adjust = (over: Partial<Parameters<typeof validateAdjust>[1]> = {}) => ({
+  gradeCode: "VIP",
+  reason: "사유",
+  lockedUntil: "",
+  ...over,
+});
+const TODAY = "2026-10-02";
+
 describe("validateAdjust", () => {
-  it("사유 필수", () => expect(validateAdjust("GENERAL", "VIP", "  ")).not.toBeNull());
-  it(`사유는 ${MAX_REASON_LENGTH}자 이하`, () => {
-    expect(validateAdjust("GENERAL", "VIP", "가".repeat(MAX_REASON_LENGTH + 1))).not.toBeNull();
-    expect(validateAdjust("GENERAL", "VIP", "가".repeat(MAX_REASON_LENGTH))).toBeNull();
+  it("정상 입력은 통과 — 유지 기한은 비워도 된다(해제할 때까지 고정)", () => {
+    expect(validateAdjust(unlocked, adjust(), TODAY)).toBeNull();
+    expect(validateAdjust(unlocked, adjust({ lockedUntil: "2026-12-31" }), TODAY)).toBeNull();
   });
-  it("등급을 골라야 한다", () => expect(validateAdjust("GENERAL", "", "사유")).not.toBeNull());
-  it("지금 등급과 같으면 막는다 — 서버도 아무것도 바꾸지 않는다", () => {
-    expect(validateAdjust("VIP", "VIP", "사유")).not.toBeNull();
+  it("사유 필수", () => expect(validateAdjust(unlocked, adjust({ reason: "  " }), TODAY)).not.toBeNull());
+  it(`사유는 ${MAX_REASON_LENGTH}자 이하`, () => {
+    expect(validateAdjust(unlocked, adjust({ reason: "가".repeat(MAX_REASON_LENGTH + 1) }), TODAY)).not.toBeNull();
+    expect(validateAdjust(unlocked, adjust({ reason: "가".repeat(MAX_REASON_LENGTH) }), TODAY)).toBeNull();
+  });
+  it("등급을 골라야 한다", () => expect(validateAdjust(unlocked, adjust({ gradeCode: "" }), TODAY)).not.toBeNull());
+  it("유지 기한은 오늘부터 — 오늘은 되고 어제는 안 된다(서버 LOCK_UNTIL_IN_PAST 와 같은 규칙)", () => {
+    expect(validateAdjust(unlocked, adjust({ lockedUntil: TODAY }), TODAY)).toBeNull();
+    expect(validateAdjust(unlocked, adjust({ lockedUntil: "2026-10-01" }), TODAY)).not.toBeNull();
+    expect(validateAdjust(unlocked, adjust({ lockedUntil: "10/31" }), TODAY)).not.toBeNull();
+  });
+  it("지금 등급 그대로여도 고정 상태가 달라지면 된다 — 기한만 바꾸는 조정", () => {
+    const vipUntilNov = { code: "VIP", lock: { locked: true, until: "2026-11-30" } };
+    expect(validateAdjust(vipUntilNov, adjust({ lockedUntil: "2026-12-31" }), TODAY)).toBeNull();
+    expect(validateAdjust(vipUntilNov, adjust({ lockedUntil: "" }), TODAY)).toBeNull();
+    // 고정되지 않은 현재 등급을 그대로 고정하는 것도 된다(구매로 얻은 등급을 유지시키는 경우).
+    expect(validateAdjust({ code: "VIP", lock: { locked: false, until: null } }, adjust(), TODAY)).toBeNull();
+  });
+  it("등급도 고정 상태도 같으면 막는다 — 서버도 아무것도 바꾸지 않는다", () => {
+    const vipUntilNov = { code: "VIP", lock: { locked: true, until: "2026-11-30" } };
+    expect(validateAdjust(vipUntilNov, adjust({ lockedUntil: "2026-11-30" }), TODAY)).not.toBeNull();
+    const vipForever = { code: "VIP", lock: { locked: true, until: null } };
+    expect(validateAdjust(vipForever, adjust({ lockedUntil: "" }), TODAY)).not.toBeNull();
+  });
+});
+
+describe("toAdjustBody", () => {
+  it("사유는 다듬고, 비운 유지 기한은 null 로 보낸다(서버가 '해제할 때까지'로 읽는다)", () => {
+    expect(toAdjustBody(adjust({ reason: "  CS 보상 " }))).toEqual({ gradeCode: "VIP", reason: "CS 보상", lockedUntil: null });
+    expect(toAdjustBody(adjust({ lockedUntil: "2026-12-31" })).lockedUntil).toBe("2026-12-31");
+  });
+});
+
+describe("lockText", () => {
+  it("고정 상태를 화면 말로 바꾼다", () => {
+    expect(lockText({ locked: true, until: "2026-12-31" })).toBe("고정됨 — 2026-12-31까지 유지");
+    expect(lockText({ locked: true, until: null })).toBe("고정됨 — 해제할 때까지 유지");
+    expect(lockText({ locked: false, until: null })).toBe("고정 아님 — 매월 1일 정기 재산정 대상");
+  });
+});
+
+describe("todayInKst", () => {
+  it("유지 기한의 '오늘'은 KST 날짜다 — UTC 로는 아직 전날인 새벽에도 KST 날짜를 준다", () => {
+    expect(todayInKst(new Date("2026-10-01T15:30:00Z"))).toBe("2026-10-02");
+    expect(todayInKst(new Date("2026-10-02T14:59:59Z"))).toBe("2026-10-02");
+    expect(todayInKst(new Date("2026-10-02T15:00:00Z"))).toBe("2026-10-03");
   });
 });
 
@@ -100,6 +154,9 @@ describe("gradeErrorMessage", () => {
     expect(msg).toContain("삭제할 수 없습니다");
   });
   it("모르는 코드는 기본 문구", () => expect(gradeErrorMessage(500, "WHATEVER", "실패")).toBe("실패"));
+  it("지난 유지 기한 거부는 화면 문구로 바꾼다", () => {
+    expect(gradeErrorMessage(400, "LOCK_UNTIL_IN_PAST", "실패")).toContain("유지 기한");
+  });
 });
 
 describe("formatAmount", () => {
