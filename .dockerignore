@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.github
+.claude
+.agents
+.cursor
+*.md
+.env*.local
+coverage
