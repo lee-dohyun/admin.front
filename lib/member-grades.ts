@@ -25,11 +25,21 @@ export type GradePolicyForm = {
 };
 
 export type GradeHistoryItem = { gradeCode: string; gradeName: string; reason: string | null; assignedAt: string };
+/**
+ * 등급 고정 상태(auth.api#49). 수동 조정한 등급은 고정돼 정기 재산정이 건너뛴다.
+ * `locked` 는 지금 유효한 고정인지이고(기한이 지나면 false), `until` 은 유지 기한(YYYY-MM-DD, 그날 포함)이다.
+ * `until` 이 null 인데 `locked` 가 true 면 해제할 때까지 고정이다.
+ */
+export type GradeLock = { locked: boolean; until: string | null };
 export type MemberGradeDetail = {
   keycloakUserId: string;
   grade: { code: string; name: string; discountRate: number };
+  lock: GradeLock;
   history: GradeHistoryItem[];
 };
+
+/** 수동 조정 입력. `lockedUntil` 은 날짜 입력 칸의 값 그대로다 — 비우면 빈 문자열. */
+export type GradeAdjustInput = { gradeCode: string; reason: string; lockedUntil: string };
 
 /** auth.api 가 수동 조정 이력에 붙이는 접두어(`AdminMemberGradeService.MANUAL_REASON_PREFIX`). */
 export const MANUAL_REASON_PREFIX = "수동 조정: ";
@@ -37,6 +47,7 @@ export const MANUAL_REASON_PREFIX = "수동 조정: ";
 export const MAX_REASON_LENGTH = 80;
 
 const CODE_PATTERN = /^[A-Z][A-Z0-9_]{0,19}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DECIMAL_2 = /^\d+(\.\d{1,2})?$/;
 
 export function toPolicyForm(policy: GradePolicy): GradePolicyForm {
@@ -85,14 +96,59 @@ export function toPolicyBody(form: GradePolicyForm) {
   };
 }
 
-/** 수동 조정 입력 검증 — 문제가 있으면 사람이 읽을 문구, 통과면 null. */
-export function validateAdjust(currentCode: string, gradeCode: string, reason: string): string | null {
-  if (!gradeCode) return "바꿀 등급을 선택해 주세요.";
-  if (gradeCode === currentCode) return "지금 등급과 같습니다. 다른 등급을 선택해 주세요.";
-  const trimmed = reason.trim();
+/**
+ * 유지 기한을 따지는 "오늘"(YYYY-MM-DD). 정기 재산정이 KST 로 돌고 auth.api 도 KST 날짜로 기한을 판정하므로
+ * 브라우저 시간대가 아니라 KST 로 고정한다.
+ */
+export function todayInKst(now: Date = new Date()): string {
+  // sv-SE 로케일의 날짜 표기가 YYYY-MM-DD 다.
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(now);
+}
+
+/**
+ * 수동 조정 입력 검증 — 문제가 있으면 사람이 읽을 문구, 통과면 null.
+ *
+ * 지금 등급과 같은 등급을 골라도 고정 상태가 달라지면 통과다(유지 기한만 바꾸거나, 구매로 얻은 등급을
+ * 고정하는 경우). 등급도 고정 상태도 같을 때만 막는다 — 서버도 그때는 아무것도 바꾸지 않는다.
+ *
+ * @param today {@link todayInKst} 값. 테스트에서 고정할 수 있게 인자로 받는다
+ */
+export function validateAdjust(
+  current: { code: string; lock: GradeLock },
+  input: GradeAdjustInput,
+  today: string
+): string | null {
+  if (!input.gradeCode) return "바꿀 등급을 선택해 주세요.";
+  const until = input.lockedUntil.trim();
+  // YYYY-MM-DD 는 문자열 비교가 곧 날짜 비교다.
+  if (until && (!DATE_PATTERN.test(until) || until < today)) return "유지 기한은 오늘 이후 날짜로 선택해 주세요.";
+  if (input.gradeCode === current.code && current.lock.locked && (current.lock.until ?? "") === until) {
+    return "지금 등급·유지 기한과 같습니다. 바꿀 내용이 없습니다.";
+  }
+  const trimmed = input.reason.trim();
   if (!trimmed) return "조정 사유를 입력해 주세요.";
   if (trimmed.length > MAX_REASON_LENGTH) return `조정 사유는 ${MAX_REASON_LENGTH}자 이하로 입력해 주세요.`;
   return null;
+}
+
+/** 수동 조정(PUT) 본문. 비운 유지 기한은 null — auth.api 가 "해제할 때까지 고정"으로 읽는다. */
+export function toAdjustBody(input: GradeAdjustInput) {
+  return {
+    gradeCode: input.gradeCode,
+    reason: input.reason.trim(),
+    lockedUntil: input.lockedUntil.trim() || null,
+  };
+}
+
+/** 유지 기한을 화면 문구로 — 기한이 없으면 "해제할 때까지". */
+export function lockPeriodText(until: string | null): string {
+  return until ? `${until}까지` : "해제할 때까지";
+}
+
+/** 고정 상태를 화면 문구로. */
+export function lockText(lock: GradeLock): string {
+  if (!lock.locked) return "고정 아님 — 매월 1일 정기 재산정 대상";
+  return `고정됨 — ${lockPeriodText(lock.until)} 유지`;
 }
 
 export function isManualAdjustment(reason: string | null | undefined): boolean {
@@ -110,6 +166,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   MEMBER_NOT_FOUND: "등급 정보가 없는 계정입니다(가입이 끝나지 않은 계정).",
   REASON_REQUIRED: "조정 사유를 입력해 주세요.",
   REASON_TOO_LONG: `조정 사유는 ${MAX_REASON_LENGTH}자 이하로 입력해 주세요.`,
+  LOCK_UNTIL_IN_PAST: "유지 기한은 오늘 이후 날짜로 선택해 주세요.",
 };
 
 export function gradeErrorMessage(status: number, errorCode: string | undefined, fallback: string): string {
