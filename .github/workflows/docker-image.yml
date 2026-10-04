@@ -15,16 +15,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to DockerHub
         # Dependabot 이 만든 pull_request 에는 저장소 시크릿이 전달되지 않는다.
         # 조건이 없으면 모든 Dependabot PR 에서 이 스텝이 실패해 CI 가 상시 빨간색이 된다.
         if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -39,7 +39,7 @@ jobs:
       # 그대로 두면 태그가 "/<name>:latest" 가 되어 buildx 가 invalid reference 로 죽는다.
       # push 하지 않는 PR 빌드에서는 태그 이름 자체가 의미 없으므로 폴백을 쓴다.
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Code Scanning
         if: always() && github.event_name == 'push'
-        uses: github/codeql-action/upload-sarif@v4.37.7
+        uses: github/codeql-action/upload-sarif@v4.37.8
         with:
           sarif_file: "trivy-results.sarif"
 
