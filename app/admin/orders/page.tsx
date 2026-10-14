@@ -98,6 +98,11 @@ export default function AdminOrdersPage() {
   return (
     <main className="max-w-6xl mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">주문 관리</h1>
+      <p className="mb-4">
+        <a href="/admin/orders/claims" className="btn btn-secondary">
+          취소·반품 신청 보기
+        </a>
+      </p>
       {error && <p style={{ color: "var(--color-danger)", marginBottom: 16 }}>{error}</p>}
       <Table>
         <thead>

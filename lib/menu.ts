@@ -59,6 +59,15 @@ export const adminMenus: MenuItem[] = [
     href: "/admin/orders",
     apiPrefixes: ["/api/admin/orders"],
     requiredRoles: ["ORDER_MANAGER", "SYSTEM_ADMIN"],
+    children: [
+      {
+        // 고객 취소·반품 신청 검토(gateway#320). 승인이 곧 환불이라 주문 관리와 같은 역할만 연다.
+        title: "취소·반품 신청",
+        href: "/admin/orders/claims",
+        apiPrefixes: ["/api/admin/orders/claims"],
+        requiredRoles: ["ORDER_MANAGER", "SYSTEM_ADMIN"],
+      },
+    ],
   },
   {
     // 회원 삭제는 개인정보 파기라 되돌릴 수 없다. 상품/주문보다 좁게 연다.
