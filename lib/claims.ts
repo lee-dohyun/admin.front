@@ -1,6 +1,12 @@
 /** 고객 취소·반품 신청 검토(gateway#320) 화면의 표시 규칙. 금액은 order.api 가 확정한 값을 그대로 보여 준다. */
 
-export type ClaimItem = { orderItemId: number; productName: string; quantity: number };
+export type ClaimItem = {
+  orderItemId: number;
+  productName: string;
+  quantity: number;
+  exchangeVariantId?: number | null;
+  exchangeOptionLabel?: string | null;
+};
 
 export type AdminClaim = {
   id: number;
@@ -18,9 +24,32 @@ export type AdminClaim = {
   rejectReason: string | null;
   createdAt: string;
   decidedAt: string | null;
+  exchangeCarrier?: string | null;
+  exchangeTrackingNumber?: string | null;
 };
 
-export const claimTypeLabel: Record<string, string> = { CANCEL: "취소", RETURN: "반품" };
+export const claimTypeLabel: Record<string, string> = { CANCEL: "취소", RETURN: "반품", EXCHANGE: "교환" };
+
+/** 교환은 판매자 사유로만 승인한다(단순 변심 교환은 실결제 전까지 받지 않는다 — gateway#320). */
+export const exchangeReasons = ["DEFECTIVE", "WRONG_ITEM"];
+
+/** 승인 때 고를 수 있는 사유. 교환이면 판매자 사유만. */
+export function approvableReasons(type: string): string[] {
+  return type === "EXCHANGE" ? exchangeReasons : Object.keys(claimReasonLabel);
+}
+
+/** "상품 × 1" — 교환이면 "상품 × 1 → 블랙 / L". */
+export function claimItemText(i: ClaimItem): string {
+  const base = `${i.productName} × ${i.quantity}`;
+  return i.exchangeOptionLabel ? base + " → " + i.exchangeOptionLabel : base;
+}
+
+/** 교환 운송장 입력 검사. */
+export function exchangeShipmentError(carrier: string, trackingNumber: string): string | null {
+  if (!carrier.trim() || !trackingNumber.trim()) return "택배사와 운송장 번호를 입력하세요.";
+  if (carrier.trim().length > 50 || trackingNumber.trim().length > 50) return "택배사와 운송장 번호는 50자 이내로 입력하세요.";
+  return null;
+}
 
 export const claimReasonLabel: Record<string, string> = {
   CHANGE_OF_MIND: "단순 변심",
@@ -30,6 +59,7 @@ export const claimReasonLabel: Record<string, string> = {
 
 export const claimStatusTabs: { status: string; label: string }[] = [
   { status: "REQUESTED", label: "처리 대기" },
+  { status: "APPROVED", label: "교환 발송 대기" },
   { status: "COMPLETED", label: "완료" },
   { status: "REJECTED", label: "반려" },
 ];
